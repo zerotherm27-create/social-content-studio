@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  brands    Brand[]
+}
+
+model Brand {
+  id             String          @id @default(cuid())
+  workspaceId    String
+  name           String
+  initials       String
+  voice          String
+  audience       String
+  offers         String
+  bannedPhrases  String
+  approvalMode   String          @default("HYBRID")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  campaigns      Campaign[]
+  drafts         ContentDraft[]
+  socialAccounts SocialAccount[]
+  approvalRules  ApprovalRule[]
+}
+
+model SocialAccount {
+  id          String   @id @default(cuid())
+  brandId     String
+  platform    String
+  displayName String
+  externalId  String
+  connected   Boolean  @default(false)
+  tokenStatus String   @default("not_connected")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  brandId         String
+  title           String
+  goal            String
+  source          String
+  targetPlatforms String
+  status          String         @default("DRAFT")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  brand           Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  drafts          ContentDraft[]
+}
+
+model ContentDraft {
+  id             String         @id @default(cuid())
+  brandId        String
+  campaignId     String
+  platform       String
+  caption        String
+  mediaType      String
+  hashtags       String
+  riskLevel      String
+  approvalStatus String         @default("PENDING_REVIEW")
+  scheduledAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  brand          Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaign       Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  publishJobs    PublishJob[]
+}
+
+model ApprovalRule {
+  id             String   @id @default(cuid())
+  brandId        String
+  name           String
+  trigger        String
+  requiresReview Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  brand          Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
+
+model PublishJob {
+  id          String        @id @default(cuid())
+  draftId     String
+  status      String        @default("QUEUED")
+  scheduledAt DateTime
+  attempts    Int           @default(0)
+  lastError   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  draft       ContentDraft  @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  logs        PublishLog[]
+}
+
+model PublishLog {
+  id           String        @id @default(cuid())
+  publishJobId String
+  status       String
+  message      String
+  rawResponse  String
+  createdAt    DateTime      @default(now())
+  publishJob   PublishJob    @relation(fields: [publishJobId], references: [id], onDelete: Cascade)
+}
