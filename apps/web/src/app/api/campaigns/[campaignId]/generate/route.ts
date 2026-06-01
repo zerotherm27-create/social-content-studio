@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateDrafts } from "@/lib/agent/mock-agent";
+import { generateAgentDrafts } from "@/lib/agent/ai-agent";
 import { db } from "@/lib/db";
 import { CampaignStatus, type ApprovalMode as ApprovalModeValue, type Platform as PlatformValue } from "@/lib/domain";
 import { decideApprovalStatus } from "@/lib/policy";
@@ -20,7 +20,7 @@ export async function POST(_request: Request, context: { params: Promise<{ campa
   }
 
   const platforms = JSON.parse(campaign.targetPlatforms) as PlatformValue[];
-  const generatedDrafts = generateDrafts({
+  const generatedDrafts = await generateAgentDrafts({
     brandName: campaign.brand.name,
     voice: campaign.brand.voice,
     audience: campaign.brand.audience,
