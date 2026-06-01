@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Social Content Studio</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-lockup">
+          <div class="brand-mark">SC</div>
+          <div>
+            <p class="eyebrow">Social Content Studio</p>
+            <h1>Generate, schedule, publish.</h1>
+          </div>
+        </div>
+
+        <section class="brand-panel">
+          <div class="section-heading">
+            <p>Brand workspaces</p>
+            <span id="brandCount">3 brands</span>
+          </div>
+          <div class="brand-list" id="brandList"></div>
+          <button class="sidebar-button" id="generateAllBrandsButton" type="button">Generate all brands</button>
+        </section>
+
+        <nav class="nav-stack" aria-label="Workspace">
+          <a class="nav-item is-active" href="#generator">Generator</a>
+          <a class="nav-item" href="#calendar">Calendar</a>
+          <a class="nav-item" href="#channels">Channels</a>
+          <a class="nav-item" href="#analytics">Analytics</a>
+        </nav>
+
+        <section class="connection-panel" id="channels">
+          <div class="section-heading">
+            <p>Connected channels</p>
+            <span id="channelCount">6 active</span>
+          </div>
+          <div class="channel-list" id="channelList"></div>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Campaign cockpit</p>
+            <h2>AI content generator</h2>
+            <p class="active-brand-line" id="activeBrandLine">Luna Brew Cafe workspace</p>
+          </div>
+          <button class="ghost-button" id="exportPlanButton" type="button">Export plan</button>
+        </header>
+
+        <section class="multi-brand-strip">
+          <div>
+            <p class="eyebrow">Multi-brand mode</p>
+            <h3>Separate calendars, assets, and publishing connections per brand.</h3>
+          </div>
+          <div class="workspace-stats" id="workspaceStats"></div>
+        </section>
+
+        <section class="generator-grid" id="generator">
+          <form class="brief-panel" id="briefForm">
+            <div class="section-heading">
+              <p>Creative brief</p>
+              <span>Auto draft</span>
+            </div>
+
+            <label>
+              Brand or offer
+              <input id="brandInput" value="Luna Brew Cafe" autocomplete="off" />
+            </label>
+
+            <label>
+              Campaign goal
+              <select id="goalInput">
+                <option>Launch a new product</option>
+                <option>Drive appointments</option>
+                <option>Promote a limited offer</option>
+                <option>Grow followers</option>
+              </select>
+            </label>
+
+            <label>
+              Audience
+              <input id="audienceInput" value="busy professionals and coffee lovers" autocomplete="off" />
+            </label>
+
+            <label>
+              Key message
+              <textarea id="messageInput" rows="4">Announce a summer cold brew flight with three new flavors and a first-week discount.</textarea>
+            </label>
+
+            <div class="field-row">
+              <label>
+                Tone
+                <select id="toneInput">
+                  <option>Warm and premium</option>
+                  <option>Bold and playful</option>
+                  <option>Professional</option>
+                  <option>Educational</option>
+                </select>
+              </label>
+              <label>
+                Post date
+                <input id="dateInput" type="date" />
+              </label>
+            </div>
+
+            <fieldset>
+              <legend>Platforms</legend>
+              <div class="platform-pills" id="platformPicker"></div>
+            </fieldset>
+
+            <button class="primary-button" type="submit">Generate content set</button>
+          </form>
+
+          <section class="preview-panel">
+            <div class="preview-toolbar">
+              <div>
+                <p class="eyebrow">Preview</p>
+                <h3 id="previewTitle">Instagram art card</h3>
+              </div>
+              <div class="segmented-control" role="tablist" aria-label="Preview type">
+                <button class="is-active" data-preview="card" type="button">Art card</button>
+                <button data-preview="video" type="button">Video</button>
+              </div>
+            </div>
+
+            <div class="creative-stage">
+              <article class="art-card" id="artCard">
+                <div class="card-orbit"></div>
+                <p id="cardBrand">Luna Brew Cafe</p>
+                <h4 id="cardHeadline">Summer cold brew flight</h4>
+                <span id="cardCta">First week: 20% off</span>
+              </article>
+
+              <article class="video-card" id="videoCard" hidden>
+                <div class="video-frame">
+                  <div class="video-progress"></div>
+                  <span>00:12</span>
+                </div>
+                <div class="subtitle-strip" id="videoSubtitle">Three new flavors. One chill summer ritual.</div>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section class="content-board">
+          <div class="board-header">
+            <div>
+              <p class="eyebrow">Generated set</p>
+              <h3>Platform-ready drafts</h3>
+            </div>
+            <button class="ghost-button" id="scheduleAllButton" type="button">Schedule selected</button>
+          </div>
+          <div class="post-grid" id="postGrid"></div>
+        </section>
+
+        <section class="calendar-analytics">
+          <section class="calendar-panel" id="calendar">
+            <div class="section-heading">
+              <p>Publishing queue</p>
+              <span id="queueCount">0 scheduled</span>
+            </div>
+            <div class="queue-list" id="queueList"></div>
+          </section>
+
+          <section class="analytics-panel" id="analytics">
+            <div class="section-heading">
+              <p>Forecast</p>
+              <span>Simulated</span>
+            </div>
+            <div class="metric-strip">
+              <div>
+                <strong id="reachMetric">18.4k</strong>
+                <span>estimated reach</span>
+              </div>
+              <div>
+                <strong id="engagementMetric">5.8%</strong>
+                <span>engagement</span>
+              </div>
+              <div>
+                <strong id="timeMetric">9:30 AM</strong>
+                <span>best slot</span>
+              </div>
+            </div>
+            <div class="bar-chart" aria-label="Projected engagement by day">
+              <span style="--height: 42%"></span>
+              <span style="--height: 66%"></span>
+              <span style="--height: 52%"></span>
+              <span style="--height: 88%"></span>
+              <span style="--height: 73%"></span>
+              <span style="--height: 61%"></span>
+              <span style="--height: 79%"></span>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
