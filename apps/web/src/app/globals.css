@@ -239,6 +239,10 @@ fieldset {
   margin: 0;
 }
 
+.accountAction {
+  margin-top: 12px;
+}
+
 .accountCard span,
 .accountCard p,
 .muted {

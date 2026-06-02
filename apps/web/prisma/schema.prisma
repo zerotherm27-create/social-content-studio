@@ -35,16 +35,21 @@ model Brand {
 }
 
 model SocialAccount {
-  id          String   @id @default(cuid())
-  brandId     String
-  platform    String
-  displayName String
-  externalId  String
-  connected   Boolean  @default(false)
-  tokenStatus String   @default("not_connected")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  brandId      String
+  platform     String
+  displayName  String
+  externalId   String
+  connected    Boolean   @default(false)
+  tokenStatus  String    @default("not_connected")
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  accountName  String?
+  locationName String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
 }
 
 model Campaign {

@@ -39,7 +39,7 @@ export default async function DashboardPage() {
         </header>
         <div className="dashboardGrid">
           <AgentComposer brandId={brand.id} />
-          <ConnectedAccounts accounts={brand.socialAccounts} />
+          <ConnectedAccounts accounts={brand.socialAccounts} brandId={brand.id} />
         </div>
         <DraftBoard drafts={brand.drafts} />
         <CalendarQueue drafts={brand.drafts} />

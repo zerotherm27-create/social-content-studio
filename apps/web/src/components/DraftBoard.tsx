@@ -2,6 +2,7 @@
 
 import type { ContentDraft } from "@prisma/client";
 import { useRouter } from "next/navigation";
+import { Platform } from "@/lib/domain";
 
 export function DraftBoard({ drafts }: { drafts: ContentDraft[] }) {
   const router = useRouter();
@@ -18,6 +19,15 @@ export function DraftBoard({ drafts }: { drafts: ContentDraft[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ scheduledAt })
     });
+    router.refresh();
+  }
+
+  async function publishGoogleDraft(draftId: string) {
+    const response = await fetch(`/api/drafts/${draftId}/publish/google`, { method: "POST" });
+    if (!response.ok) {
+      const payload = await response.json();
+      window.alert(payload.error ?? "Google publishing failed.");
+    }
     router.refresh();
   }
 
@@ -54,6 +64,11 @@ export function DraftBoard({ drafts }: { drafts: ContentDraft[] }) {
                   <button type="button" onClick={() => scheduleDraft(draft.id)}>
                     Schedule
                   </button>
+                  {draft.platform === Platform.GOOGLE_BUSINESS ? (
+                    <button type="button" onClick={() => publishGoogleDraft(draft.id)}>
+                      Publish Google
+                    </button>
+                  ) : null}
                 </div>
               </footer>
             </article>

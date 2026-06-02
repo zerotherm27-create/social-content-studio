@@ -41,6 +41,11 @@ CREATE TABLE "SocialAccount" (
   "externalId" TEXT NOT NULL,
   "connected" BOOLEAN NOT NULL DEFAULT false,
   "tokenStatus" TEXT NOT NULL DEFAULT 'not_connected',
+  "accessToken" TEXT,
+  "refreshToken" TEXT,
+  "expiresAt" DATETIME,
+  "accountName" TEXT,
+  "locationName" TEXT,
   "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" DATETIME NOT NULL,
   CONSTRAINT "SocialAccount_brandId_fkey" FOREIGN KEY ("brandId") REFERENCES "Brand" ("id") ON DELETE CASCADE ON UPDATE CASCADE

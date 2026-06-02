@@ -22,7 +22,14 @@ async function main() {
             create: [
               { platform: Platform.FACEBOOK, displayName: "Luna Brew Cafe Page", externalId: "pending-facebook", connected: false },
               { platform: Platform.INSTAGRAM, displayName: "@lunabrewcafe", externalId: "pending-instagram", connected: false },
-              { platform: Platform.GOOGLE_BUSINESS, displayName: "Luna Brew Cafe GBP", externalId: "pending-google", connected: false },
+              {
+                platform: Platform.GOOGLE_BUSINESS,
+                displayName: "Luna Brew Cafe GBP",
+                externalId: "pending-google",
+                connected: false,
+                accountName: "accounts/demo",
+                locationName: "accounts/demo/locations/luna-brew-cafe"
+              },
               { platform: Platform.TIKTOK, displayName: "@lunabrewcafe", externalId: "pending-tiktok", connected: false },
               { platform: Platform.LINKEDIN, displayName: "Luna Brew Cafe Company", externalId: "pending-linkedin", connected: false }
             ]

@@ -1,8 +1,9 @@
 import type { SocialAccount } from "@prisma/client";
+import Link from "next/link";
+import { Platform } from "@/lib/domain";
 import { getPlatformDefinition, platformDefinitions } from "@/lib/platforms";
-import type { Platform } from "@/lib/domain";
 
-export function ConnectedAccounts({ accounts }: { accounts: SocialAccount[] }) {
+export function ConnectedAccounts({ accounts, brandId }: { accounts: SocialAccount[]; brandId: string }) {
   return (
     <section className="panel">
       <p className="eyebrow">Direct integrations</p>
@@ -13,6 +14,13 @@ export function ConnectedAccounts({ accounts }: { accounts: SocialAccount[] }) {
             <strong>{labelForPlatform(account.platform)}</strong>
             <span>{account.displayName}</span>
             <p>{account.connected ? "Connected" : "OAuth setup pending"}</p>
+            {account.platform === Platform.GOOGLE_BUSINESS ? (
+              <Link className="buttonLink accountAction" href={`/api/integrations/google/connect?brandId=${brandId}`}>
+                {account.connected ? "Reconnect" : "Connect"}
+              </Link>
+            ) : (
+              <span className="accountAction muted">Coming later</span>
+            )}
           </article>
         ))}
       </div>
