@@ -446,17 +446,17 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
 
       {ideaList.length === 0 ? (
         <section className="ideaEmpty"><div className="ideaEmptyVisual"><span>{brandName.slice(0, 2).toUpperCase()}</span><small>Brand DNA → ideas → art cards</small></div><div><p className="contextLabel">Ready when you are</p><h3>Build the first idea set</h3><p>Orbit will use the saved voice, audience, offers, and visual direction to propose six distinct concepts.</p><button className="primaryAction" disabled={isGenerating} type="button" onClick={generateIdeas}>{isGenerating ? "Reading Brand DNA" : "Generate ideas"}</button></div></section>
-      ) : <div className="ideasLayout premiumIdeasLayout">
+      ) : <div className="ideasLayout">
         <section className="ideaGrid" aria-label="Generated content ideas">
-          {filteredIdeas.map((idea, index) => (
+          {filteredIdeas.map((idea) => (
             <article className={selected?.id === idea.id ? "ideaCard selected" : "ideaCard"} key={idea.id}>
-              <button className="ideaConceptButton" type="button" aria-label={`Inspect ${idea.title}`} onClick={() => setSelected(idea)}>
-                <IdeaConceptPreview idea={idea} brandName={brandName} index={index} />
+              <button className="ideaImageButton" type="button" aria-label={`Inspect ${idea.title}`} onClick={() => setSelected(idea)}>
+                <img className="ideaImage" src={`/api/ideas/${idea.id}/artcard`} alt={`${idea.title} art card for ${brandName}`} />
               </button>
               <div className="ideaCardCopy">
-                <span>{idea.purpose} · {idea.format}</span>
+                <span>{idea.format}</span>
                 <h3>{idea.title}</h3>
-                <p>{idea.hook}</p>
+                <p>{idea.purpose}</p>
                 <div>
                   <button type="button" onClick={() => updateStatus(idea, "SAVED")}>{idea.status === "SAVED" ? "Saved" : "Save"}</button>
                   <button type="button" onClick={() => updateStatus(idea, "SKIPPED")}>Skip</button>
@@ -467,8 +467,8 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
           ))}
         </section>
 
-        {selected ? <aside className="ideaInspector premiumInspector">
-          <IdeaConceptPreview idea={selected} brandName={brandName} index={filteredIdeas.findIndex((idea) => idea.id === selected.id)} large />
+        {selected ? <aside className="ideaInspector">
+          <img className="inspectorPreview" src={`/api/ideas/${selected.id}/artcard`} alt={`${selected.title} art card preview`} />
           <p className="contextLabel">Selected idea</p>
           <h3>{selected.title}</h3>
           <p>{selected.reason}</p>
@@ -479,48 +479,10 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
           </dl>
           <button className="primaryAction fullWidth" type="button" onClick={() => updateStatus(selected, "BUILT")}>Build this idea</button>
           <button className="secondaryAction fullWidth" type="button" onClick={() => updateStatus(selected, "SAVED")}>{selected.status === "SAVED" ? "Saved for later" : "Save for later"}</button>
-          <a className="artCardDownload" href={`/api/ideas/${selected.id}/artcard`} target="_blank" rel="noreferrer">Generate/open full-size art card</a>
+          <a className="artCardDownload" href={`/api/ideas/${selected.id}/artcard`} target="_blank" rel="noreferrer">Open full-size art card</a>
         </aside> : null}
       </div>
       }
-    </div>
-  );
-}
-
-function IdeaConceptPreview({ idea, brandName, index, large = false }: { idea: ContentIdea; brandName: string; index: number; large?: boolean }) {
-  const seed = `${brandName}:${idea.title}:${idea.purpose}:${index}`;
-  let hash = 0;
-  for (let char = 0; char < seed.length; char += 1) hash = (hash * 33 + seed.charCodeAt(char)) >>> 0;
-  const hue = hash % 360;
-  const accentHue = (hue + 42) % 360;
-  const conceptNumber = String(Math.max(1, index + 1)).padStart(2, "0");
-  const format = idea.format.replace(/\s+/g, " ").trim();
-  const hook = idea.hook.replace(/\s+/g, " ").trim();
-  const style = {
-    "--concept-hue": String(hue),
-    "--concept-accent-hue": String(accentHue)
-  } as CSSProperties;
-
-  return (
-    <div className={large ? "ideaConceptPreview large" : "ideaConceptPreview"} style={style}>
-      <div className="conceptTopline">
-        <span>{brandName}</span>
-        <b>{conceptNumber}</b>
-      </div>
-      <div className="conceptStage" aria-hidden="true">
-        <i />
-        <span />
-        <em />
-      </div>
-      <div className="conceptCopy">
-        <small>{idea.purpose}</small>
-        <h4>{idea.title}</h4>
-        <p>{hook}</p>
-      </div>
-      <div className="conceptFooter">
-        <span>{format}</span>
-        <b>Creative direction</b>
-      </div>
     </div>
   );
 }

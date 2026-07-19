@@ -137,126 +137,23 @@ a { color: inherit; }
 .filterRow button { min-height: 38px; border: 0; border-radius: 8px; padding: 0 12px; color: var(--muted); background: transparent; cursor: pointer; }
 .filterRow button.active { color: var(--ink); background: #deded8; font-weight: 700; }
 .ideasLayout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; }
-.premiumIdeasLayout { grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); gap: 26px; }
 .ideaGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.premiumIdeasLayout .ideaGrid { gap: 22px; }
-.ideaCard { overflow: hidden; border: 1px solid rgba(28, 33, 29, .10); border-radius: 22px; background: rgba(251, 250, 247, .86); box-shadow: 0 18px 50px rgba(28, 33, 29, .07); transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+.ideaCard { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-surface); background: var(--paper); transition: transform .25s ease, border-color .25s ease; }
 .ideaCard:nth-child(2), .ideaCard:nth-child(4) { transform: translateY(28px); }
-.ideaCard:hover { border-color: rgba(28, 33, 29, .18); box-shadow: 0 24px 70px rgba(28, 33, 29, .11); }
-.ideaCard.selected { border-color: rgba(217, 95, 71, .72); box-shadow: 0 26px 80px rgba(217, 95, 71, .14); }
-.ideaConceptButton { display: block; overflow: hidden; width: 100%; border: 0; padding: 0; background: #171d18; cursor: pointer; text-align: left; }
-.ideaConceptPreview {
-  --concept-base: hsl(var(--concept-hue) 28% 22%);
-  --concept-mid: hsl(var(--concept-hue) 34% 34%);
-  --concept-soft: hsl(var(--concept-hue) 36% 88%);
-  --concept-accent: hsl(var(--concept-accent-hue) 74% 58%);
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  align-content: space-between;
-  min-height: 390px;
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  padding: 22px;
-  color: #fffaf2;
-  background:
-    radial-gradient(circle at 76% 18%, rgba(255, 255, 255, .28) 0 11%, transparent 11.5%),
-    radial-gradient(circle at 10% 100%, var(--concept-accent) 0 22%, transparent 22.5%),
-    linear-gradient(150deg, #141914 0%, var(--concept-base) 42%, var(--concept-mid) 100%);
-  transition: transform .45s cubic-bezier(.16, 1, .3, 1), filter .45s cubic-bezier(.16, 1, .3, 1);
-}
-.ideaConceptButton:hover .ideaConceptPreview { transform: scale(1.025); filter: saturate(1.04) contrast(1.02); }
-.ideaConceptPreview::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  opacity: .36;
-  background-image:
-    linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.9), transparent 74%);
-}
-.ideaConceptPreview::after {
-  content: "";
-  position: absolute;
-  inset: auto -18% -22% 28%;
-  z-index: -1;
-  height: 44%;
-  border-radius: 999px 999px 0 0;
-  background: color-mix(in srgb, var(--concept-accent) 86%, #fff 14%);
-  transform: rotate(-6deg);
-}
-.conceptTopline, .conceptFooter { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.conceptTopline span, .conceptFooter span, .conceptFooter b, .conceptCopy small {
-  font: 800 10px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-.conceptTopline span, .conceptFooter span { max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,250,242,.72); }
-.conceptTopline b { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; color: #171d18; background: #fffaf2; font: 900 12px/1 ui-monospace, monospace; }
-.conceptStage { position: relative; min-height: 118px; margin: 18px 0 8px; }
-.conceptStage i {
-  position: absolute;
-  inset: 8px auto auto 8px;
-  width: 45%;
-  aspect-ratio: 1.45;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(255,255,255,.96), var(--concept-soft));
-  box-shadow: 0 24px 70px rgba(0,0,0,.22);
-}
-.conceptStage i::before, .conceptStage i::after {
-  content: "";
-  position: absolute;
-  left: 18%;
-  right: 18%;
-  height: 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--concept-mid) 74%, #fff 26%);
-}
-.conceptStage i::before { top: 31%; }
-.conceptStage i::after { top: 54%; opacity: .72; }
-.conceptStage span {
-  position: absolute;
-  right: 6%;
-  top: 28%;
-  width: 38%;
-  height: 46%;
-  border-radius: 999px 999px 18px 18px;
-  border: 10px solid color-mix(in srgb, var(--concept-accent) 84%, #fff 16%);
-  border-bottom: 0;
-  transform: rotate(9deg);
-}
-.conceptStage em {
-  position: absolute;
-  left: 34%;
-  bottom: 4px;
-  width: 52%;
-  height: 20px;
-  border-radius: 999px;
-  background: #fffaf2;
-  opacity: .92;
-  transform: rotate(-4deg);
-}
-.conceptCopy { max-width: 94%; }
-.conceptCopy small { display: inline-flex; border-radius: 999px; padding: 7px 9px; color: #171d18; background: rgba(255,250,242,.88); }
-.conceptCopy h4 { margin: 12px 0 8px; max-width: 12ch; font-size: clamp(30px, 4vw, 46px); line-height: .9; letter-spacing: -.07em; text-wrap: balance; }
-.conceptCopy p { display: -webkit-box; max-width: 28ch; margin: 0; overflow: hidden; color: rgba(255,250,242,.78); font-size: 14px; line-height: 1.35; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.conceptFooter { align-self: end; border-top: 1px solid rgba(255,250,242,.20); padding-top: 14px; }
-.conceptFooter b { color: #171d18; border-radius: 999px; padding: 8px 10px; background: var(--concept-accent); }
-.ideaConceptPreview.large { min-height: 420px; margin-bottom: 22px; border-radius: 16px; }
-.ideaCardCopy { padding: 20px 20px 18px; }
+.ideaCard:hover { border-color: var(--line-strong); }
+.ideaCard.selected { border-color: var(--coral); }
+.ideaImageButton { display: block; overflow: hidden; width: 100%; border: 0; padding: 0; background: var(--charcoal); cursor: pointer; }
+.ideaImage { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; transition: transform .35s cubic-bezier(.16, 1, .3, 1); }
+.ideaImageButton:hover .ideaImage { transform: scale(1.02); }
+.ideaCardCopy { padding: 17px; }
 .ideaCardCopy > span { color: var(--quiet); font: 11px/1.3 ui-monospace, monospace; text-transform: uppercase; }
-.ideaCardCopy h3 { margin: 10px 0 7px; font-size: 21px; line-height: 1.08; letter-spacing: -.04em; text-wrap: balance; }
-.ideaCardCopy p { display: -webkit-box; min-height: 40px; margin: 0 0 16px; overflow: hidden; color: var(--muted); line-height: 1.45; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ideaCardCopy h3 { margin: 9px 0 5px; font-size: 18px; letter-spacing: -.025em; }
+.ideaCardCopy p { margin: 0 0 14px; color: var(--muted); }
 .ideaCardCopy div { display: flex; gap: 8px; }
 .ideaCardCopy button, .brandDnaGrid button { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 11px; background: transparent; cursor: pointer; }
 .ideaInspector { position: sticky; top: 116px; padding: 14px; }
-.premiumInspector { border-radius: 24px; padding: 16px; background: linear-gradient(180deg, rgba(251,250,247,.98), rgba(244,242,235,.96)); box-shadow: 0 24px 80px rgba(28, 33, 29, .10); }
 .inspectorPreview { display: block; width: 100%; aspect-ratio: 4 / 5; margin-bottom: 22px; border-radius: 10px; object-fit: cover; background: var(--charcoal); }
-.ideaInspector > p:not(.contextLabel) { color: var(--muted); line-height: 1.55; }
-.ideaInspector h3 { font-size: 25px; line-height: 1.04; letter-spacing: -.045em; text-wrap: balance; }
+.ideaInspector > p:not(.contextLabel) { color: var(--muted); line-height: 1.5; }
 .ideaInspector dl { margin: 22px 0; }
 .ideaInspector dl div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; border-top: 1px solid var(--line); padding: 11px 0; }
 .ideaInspector dt { color: var(--quiet); }
