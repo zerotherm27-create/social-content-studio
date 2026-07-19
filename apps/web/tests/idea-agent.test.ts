@@ -15,6 +15,8 @@ describe("generateContentIdeas", () => {
     expect(ideas).toHaveLength(6);
     expect(ideas[0].title).toBeTruthy();
     expect(ideas.some((idea) => idea.purpose === "Behind the scenes")).toBe(true);
+    expect(ideas[0].imagePrompt).toContain("Campaign angle:");
+    expect(ideas[0].imagePrompt).toContain("do not create a generic template");
   });
 
   it("parses structured ideas from the Responses API", async () => {
@@ -34,5 +36,10 @@ describe("generateContentIdeas", () => {
     const ideas = await generateContentIdeas(input, { apiKey: "sk-test", fetcher });
     expect(ideas).toEqual(generated);
     expect(fetcher).toHaveBeenCalledWith("https://api.openai.com/v1/responses", expect.objectContaining({ method: "POST" }));
+    const body = JSON.parse(fetcher.mock.calls[0][1].body as string);
+    const promptPayload = JSON.parse(body.input[0].content[0].text);
+    expect(body.instructions).toContain("social media strategy agent");
+    expect(promptPayload.socialIntelligence.qualityGate).toContain("Would a real social media manager post this for the brand?");
+    expect(promptPayload.task.join(" ")).toContain("premium brand-native art-card");
   });
 });

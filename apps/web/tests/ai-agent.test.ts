@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { MediaType, Platform } from "@/lib/domain";
-import { generateAgentDrafts, parseOpenAIResponseText } from "@/lib/agent/ai-agent";
+import { buildOpenAIRequest, generateAgentDrafts, parseOpenAIResponseText } from "@/lib/agent/ai-agent";
 
 const baseInput = {
   brandName: "Luna Brew Cafe",
@@ -74,6 +74,19 @@ describe("generateAgentDrafts", () => {
       })
     );
     expect(drafts[0].caption).toBe("Fresh AI copy for Facebook.");
+  });
+
+  it("sends a structured social intelligence brief to the model", () => {
+    const request = buildOpenAIRequest(baseInput, "gpt-5.4-mini");
+    const text = request.input[0].content[0].text;
+    const payload = JSON.parse(text);
+
+    expect(request.instructions).toContain("autonomous social media content agent");
+    expect(payload.socialIntelligence.agentMode).toContain("publishing QA");
+    expect(payload.socialIntelligence.campaignStrategy.angle).toBe("offer");
+    expect(payload.socialIntelligence.platformPlaybooks.FACEBOOK.openingMove).toBeTruthy();
+    expect(payload.rules).toContain("Use the supplied socialIntelligence object as your strategy brief. Do not ignore the platform playbook or quality gate.");
+    expect(payload.rules.join(" ")).toContain("Before finalizing each draft");
   });
 });
 

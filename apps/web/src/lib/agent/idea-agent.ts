@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { buildSocialIntelligenceBrief, buildStrategicVisualDirection, inferCampaignAngle } from "./social-intelligence";
 
 export type IdeaGenerationInput = {
   brandName: string;
@@ -37,20 +38,28 @@ const ideasSchema = z.object({ ideas: z.array(ideaSchema).min(4).max(8) });
 export async function generateContentIdeas(input: IdeaGenerationInput, options: IdeaAgentOptions = {}): Promise<GeneratedIdea[]> {
   const apiKey = options.apiKey ?? process.env.OPENAI_API_KEY;
   if (!apiKey) return generateMockIdeas(input);
+  const socialIntelligence = buildSocialIntelligenceBrief(input);
 
   const response = await (options.fetcher ?? fetch)("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: options.model ?? process.env.OPENAI_MODEL ?? "gpt-5.4-mini",
-      instructions: "You are a senior social content strategist. Propose specific, varied, brand-safe content ideas. Return only schema-valid JSON.",
+      instructions: "You are Orbit, a senior social media strategy agent. Build content ideas like a working social media manager: diagnose audience tension, campaign angle, content pillar, platform behavior, visual proof, and next action. Propose specific, varied, brand-safe ideas that can become real posts. Return only schema-valid JSON.",
       input: [{
         role: "user",
         content: [{
           type: "input_text",
           text: JSON.stringify({
             brand: input,
-            task: "Create six distinct ideas across promotional, educational, community, lifestyle, and behind-the-scenes purposes. Use concrete hooks and platform-native formats. Avoid unverifiable claims."
+            socialIntelligence,
+            task: [
+              "Create six distinct content ideas across conversion, proof, education, community, lifestyle, and behind-the-scenes purposes.",
+              "Each idea must have a clear audience insight, a post job, and a format that a real social media manager would choose.",
+              "Use concrete hooks, not generic topic labels.",
+              "The imagePrompt must be a premium brand-native art-card or video-cover direction, not a stock photo prompt.",
+              "Avoid unverifiable claims, generic stamps, and template language."
+            ]
           })
         }]
       }],
@@ -97,20 +106,30 @@ export async function generateContentIdeas(input: IdeaGenerationInput, options: 
 
 export function generateMockIdeas(input: IdeaGenerationInput): GeneratedIdea[] {
   const offer = input.offers.split(",")[0]?.trim() || "the current offer";
-  return [
-    ["Make the offer clear", `What should customers know first about ${offer}?`, "Offer launch", "Instagram carousel", "Makes the current offer easy to understand at a glance."],
-    ["Show how the work gets done", "The details customers rarely get to see.", "Behind the scenes", "Short-form video", "Process-led content adds proof without another sales claim."],
-    ["Connect to a real routine", "A familiar customer moment, made easier.", "Lifestyle", "Instagram reel", `Connects ${offer} to the routine of ${input.audience}.`],
-    ["Let customers choose", "Which detail matters most to you?", "Community", "Facebook post", "A specific choice prompt can create useful comments."],
-    ["Teach one useful detail", "One practical thing to know before choosing this service.", "Education", "Instagram carousel", "A useful guide gives people a reason to save the post."],
-    ["Make the next step easy", `A simple way to act on ${offer}.`, "Customer action", "Google Business update", "Turns awareness into a clear customer action."]
-  ].map(([title, hook, purpose, format, reason]) => ({
+  const angle = inferCampaignAngle(input);
+  const ideas = [
+    ["Make the offer instantly clear", `What should customers understand first about ${offer}?`, "Conversion", "Instagram single-image art card", "Turns the offer into one clear promise and one next step."],
+    ["Prove the process", "Show the work customers usually do not see.", "Behind the scenes", "Short-form video or reel cover", "Process proof builds trust without needing exaggerated claims."],
+    ["Fit the customer routine", `Where does ${offer} naturally fit into a normal week?`, "Lifestyle", "Instagram reel or Facebook image post", `Connects the offer to the real routine of ${input.audience}.`],
+    ["Invite a useful reply", "Ask which detail would make the service easier to choose.", "Community", "Facebook or Threads prompt", "Specific choice prompts create better comments than broad engagement bait."],
+    ["Teach one buying detail", "One practical thing to know before choosing this service.", "Education", "Saveable carousel", "A useful guide gives people a reason to save and trust the brand."],
+    ["Remove action friction", `The simplest way to act on ${offer}.`, "Customer action", "Google Business update", "Makes the next step obvious for high-intent customers."]
+  ];
+
+  return ideas.map(([title, hook, purpose, format, reason]) => ({
     title,
     hook,
     purpose,
     format,
     reason,
-    imagePrompt: `${input.visualStyle || "Natural editorial brand photography"}. ${title}. No text or watermark.`
+    imagePrompt: buildStrategicVisualDirection({
+      ...input,
+      campaignTitle: title,
+      goal: purpose,
+      source: reason,
+      platform: format.includes("Google") ? "GOOGLE_BUSINESS" : format.includes("Threads") ? "THREADS" : "INSTAGRAM",
+      base: `${input.visualStyle || "premium brand-native social creative"}. ${title}. Campaign angle: ${angle}.`
+    })
   }));
 }
 

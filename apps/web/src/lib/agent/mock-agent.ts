@@ -1,4 +1,5 @@
 import { MediaType, Platform, type MediaType as MediaTypeValue, type Platform as PlatformValue } from "../domain";
+import { buildSocialIntelligenceBrief, buildStrategicVisualDirection, getPlatformPlaybook, inferCampaignAngle, inferFunnelStage } from "./social-intelligence";
 
 type GenerateDraftsInput = {
   brandName: string;
@@ -44,43 +45,59 @@ const platformMedia: Record<PlatformValue, MediaTypeValue> = {
 };
 
 export function generateDrafts(input: GenerateDraftsInput): GeneratedDraft[] {
+  const socialIntelligence = buildSocialIntelligenceBrief(input);
+
   return input.platforms.map((platform) => {
     const hook = platformHooks[platform];
     const offer = firstUsefulPhrase(input.source) || firstUsefulPhrase(input.offers) || input.campaignTitle;
     const benefit = customerBenefit(input) || `Made for ${input.audience}`;
-    const angle = getCampaignAngle(`${input.campaignTitle} ${input.goal} ${input.source} ${input.offers}`);
+    const angle = inferCampaignAngle(input);
+    const funnelStage = inferFunnelStage(input, angle);
+    const playbook = getPlatformPlaybook(platform, angle, funnelStage);
     const headline = buildArtHeadline(input.campaignTitle, offer, angle);
     const subline = buildArtSubline(offer, benefit, input.audience, angle);
     return {
       platform,
       mediaType: platformMedia[platform],
-      caption: buildCaption({ ...input, platform, hook, offer, benefit }),
+      caption: buildCaption({ ...input, platform, hook, offer, benefit, openingMove: playbook.openingMove, contentJob: socialIntelligence.campaignStrategy.contentJob }),
       hashtags: buildHashtags(input.brandName, input.campaignTitle),
       artHeadline: headline,
       artSubline: subline,
-      visualDirection: buildVisualDirection(input, platform, offer, angle)
+      visualDirection: buildVisualDirection(input, platform)
     };
   });
 }
 
-function buildCaption(input: GenerateDraftsInput & { platform: PlatformValue; hook: string; offer: string; benefit: string }) {
+function buildCaption(input: GenerateDraftsInput & {
+  platform: PlatformValue;
+  hook: string;
+  offer: string;
+  benefit: string;
+  openingMove: string;
+  contentJob: string;
+}) {
   const cta = getFallbackCta(input.platform, input.goal, input.source);
   const audienceLine = input.audience ? `Made for ${input.audience}.` : "";
+  const strategicLead = input.openingMove.replace(/\.$/, "");
 
   if (input.platform === Platform.GOOGLE_BUSINESS) {
-    return `${input.offer} ${input.brandName} makes the next step clear. ${input.benefit}. ${cta}`;
+    return `${input.offer} from ${input.brandName}. ${input.benefit}. ${cta}`;
   }
 
   if (input.platform === Platform.INSTAGRAM) {
-    return `${input.hook} ${input.offer}\n\n${input.benefit}. ${audienceLine}\n\n${cta}`;
+    return `${strategicLead}: ${input.offer}\n\n${input.benefit}. ${audienceLine}\n\n${cta}`;
   }
 
   if (input.platform === Platform.THREADS) {
-    return `${input.hook} ${input.offer} ${input.benefit}. ${cta}`;
+    return `${input.hook} ${input.offer} ${input.benefit}. What would make this easier to choose?`;
   }
 
   if (input.platform === Platform.TIKTOK) {
-    return `${input.hook} ${input.offer} Show the real moment, the result, and the next step. ${cta}`;
+    return `${input.hook} ${input.offer} Show the real moment first, then the result. ${cta}`;
+  }
+
+  if (input.platform === Platform.LINKEDIN) {
+    return `${input.contentJob}. ${input.brandName} is using ${input.offer} to make the customer experience clearer for ${input.audience}. ${input.benefit}.`;
   }
 
   return `${input.hook} ${input.brandName}: ${input.offer} ${audienceLine} ${input.benefit}. ${cta}`;
@@ -113,21 +130,12 @@ function trimWords(value: string, maxWords: number) {
 
 function getFallbackCta(platform: PlatformValue, goal: string, source: string) {
   const text = `${goal} ${source}`.toLowerCase();
+  if (text.includes("pickup")) return "Book your pickup when you're ready.";
   if (text.includes("message") || text.includes("inquire")) return "Send us a message to get started.";
   if (text.includes("visit") || platform === Platform.GOOGLE_BUSINESS) return "Visit us when you're nearby.";
   if (text.includes("order") || text.includes("shop")) return "Order while the offer is available.";
   if (text.includes("book") || text.includes("appointment")) return "Book your preferred time.";
   return "See the details and take the next step.";
-}
-
-function getCampaignAngle(value: string) {
-  const text = value.toLowerCase();
-  if (text.includes("book") || text.includes("appointment") || text.includes("pickup") || text.includes("schedule")) return "booking";
-  if (text.includes("discount") || text.includes("off") || text.includes("free") || text.includes("promo") || text.includes("limited")) return "offer";
-  if (text.includes("new") || text.includes("launch") || text.includes("introducing")) return "launch";
-  if (text.includes("property") || text.includes("condo") || text.includes("inquiry")) return "inquiry";
-  if (text.includes("visit") || text.includes("nearby") || text.includes("store")) return "local";
-  return "action";
 }
 
 function buildArtHeadline(campaignTitle: string, offer: string, angle: string) {
@@ -150,19 +158,8 @@ function buildArtSubline(offer: string, benefit: string, audience: string, angle
   return trimWords(`${benefit} ${audienceContext}.`, 16);
 }
 
-function buildVisualDirection(input: GenerateDraftsInput, platform: PlatformValue, offer: string, angle: string) {
-  const platformCrop = platform === Platform.GOOGLE_BUSINESS ? "landscape local-business crop" : platform === Platform.TIKTOK ? "vertical motion-first crop" : "4:5 feed crop";
-  const base = input.creativeDirection || input.visualStyle || "Clean commercial photography with natural light";
-  const moment =
-    angle === "booking"
-      ? "show the service being requested or completed, with the customer action visually obvious"
-      : angle === "offer"
-        ? "show the offer as the hero subject with one supporting proof detail nearby"
-        : angle === "launch"
-          ? "show the new product or service moment in the foreground"
-          : "show the product or service in a believable customer-use moment";
-
-  return `${base}. ${platformCrop}: ${moment}. Use a strong foreground subject, brand-color accents in real props or environment, calm lower-third negative space for copy, and no readable text inside the image.`;
+function buildVisualDirection(input: GenerateDraftsInput, platform: PlatformValue) {
+  return buildStrategicVisualDirection({ ...input, platform });
 }
 
 function buildHashtags(brandName: string, campaignTitle: string) {
