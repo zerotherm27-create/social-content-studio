@@ -9,3 +9,4 @@ test-results/
 .env
 *.db
 *.db-journal
+.DS_Store
