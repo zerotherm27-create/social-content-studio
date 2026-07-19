@@ -36,7 +36,7 @@ export async function extractBrandProfile(input: ProfileInput, options: ProfileO
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: options.model ?? process.env.OPENAI_MODEL ?? "gpt-5.4-mini",
-      instructions: "Extract a conservative Brand DNA profile from supplied website evidence. Separate evidence from inference. Do not invent guarantees, customers, prices, or certifications. Return only schema-valid JSON.",
+      instructions: "Extract a conservative Brand DNA profile from supplied website or social-post evidence. Separate evidence from inference. For visualStyle, capture the brand's actual posting system when evidence supports it: recurring post formats, headline style, offer/CTA patterns, product-photo treatment, color cues, proof blocks, badges, before/after motifs, and any repeated layout behavior. Do not invent guarantees, customers, prices, certifications, colors, or visual motifs not supported by evidence. Return only schema-valid JSON.",
       input: [{ role: "user", content: [{ type: "input_text", text: JSON.stringify(input) }] }],
       text: {
         format: {

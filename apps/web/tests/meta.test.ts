@@ -261,7 +261,7 @@ describe("fetchMetaPagePosts", () => {
 
     expect(fetcher).toHaveBeenCalledWith(expect.objectContaining({ pathname: "/v23.0/page-1/published_posts" }));
     const requestedUrl = fetcher.mock.calls[0][0] as URL;
-    expect(requestedUrl.searchParams.get("fields")).toBe("id,message,created_time,permalink_url");
+    expect(requestedUrl.searchParams.get("fields")).toBe("id,message,created_time,permalink_url,full_picture,attachments{media,target,type,title,description}");
     expect(requestedUrl.searchParams.get("fields")).not.toContain("comments");
     expect(posts[0].message).toBe("Cold brew flight is live.");
   });
@@ -297,6 +297,14 @@ describe("summarizeMetaPosts", () => {
         id: "post-1",
         message: "Cold brew flight is live.",
         created_time: "2026-07-13T08:00:00+0000",
+        full_picture: "https://example.com/cold-brew.jpg",
+        attachments: {
+          data: [{
+            type: "photo",
+            title: "Cold brew flight",
+            media: { image: { src: "https://example.com/attachment.jpg" } }
+          }]
+        },
         reactions: { summary: { total_count: 12 } },
         comments: { summary: { total_count: 3 } },
         shares: { count: 2 }
@@ -305,5 +313,8 @@ describe("summarizeMetaPosts", () => {
 
     expect(summary).toContain("Cold brew flight is live.");
     expect(summary).toContain("12 reactions, 3 comments, 2 shares");
+    expect(summary).toContain("Visual evidence:");
+    expect(summary).toContain("full_picture=https://example.com/cold-brew.jpg");
+    expect(summary).toContain("type=photo");
   });
 });

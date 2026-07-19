@@ -180,35 +180,30 @@ export function createArtCardSvg(input: ArtCardInput) {
   const headerInk = readableTextColor(brandColor);
   const headlineLines = limitLines(wrapText(input.headline, width >= 1200 ? 24 : 20), isLandscape ? 3 : 4, width >= 1200 ? 24 : 20);
   const sublineLines = limitLines(wrapText(input.subline, width >= 1200 ? 44 : 38), isLandscape ? 2 : 3, width >= 1200 ? 44 : 38);
+  const photoHeadlineLines = limitLines(wrapText(input.headline, isLandscape ? 16 : 10), 3, isLandscape ? 16 : 10);
   const host = input.websiteHost || "Brand-led creative";
   const cta = getArtCardCta(input);
   const ctaInk = readableTextColor(accentColor);
+  const lightCanvasInk = "#102235";
   const ctaWidth = cta.length > 12 ? 354 : 230;
   const proofLine = getArtCardProofLine(input);
   const angle = getCampaignAngle(input);
-  const marketingLabel = getMarketingLabel(input);
   const offerBadge = getOfferBadge(input);
   const photoHeadlineSize = isLandscape
-    ? (headlineLines.length > 2 ? 44 : 56)
-    : width >= 1200 ? (headlineLines.length > 2 ? 62 : 74) : (headlineLines.length > 2 ? 58 : 70);
-  const photoHeadlineStep = headlineLines.length > 2 ? Math.round(photoHeadlineSize * 1.14) : Math.round(photoHeadlineSize * 1.12);
-  const photoSublineSize = isLandscape ? 25 : 30;
+    ? (photoHeadlineLines.length > 2 ? 46 : 56)
+    : width >= 1200 ? (photoHeadlineLines.length > 2 ? 78 : 92) : (photoHeadlineLines.length > 2 ? 72 : 86);
+  const photoHeadlineStep = Math.round(photoHeadlineSize * 1.08);
+  const photoSublineSize = isLandscape ? 22 : 30;
   const photoSublineStep = Math.round(photoSublineSize * 1.34);
-  const photoTextHeight =
-    estimateTextHeight(photoHeadlineSize, photoHeadlineStep, headlineLines.length) +
-    42 +
-    estimateTextHeight(photoSublineSize, photoSublineStep, sublineLines.length);
-  const photoPanelHeight = Math.min(
-    Math.max(Math.round(height * 0.34), photoTextHeight + 238, 430),
-    height >= 1800 ? 760 : Math.round(height * 0.54)
-  );
-  const photoPanelY = height - photoPanelHeight - pad;
-  const photoHeadlineY = photoPanelY + 104;
-  const photoSublineY = photoHeadlineY + estimateTextHeight(photoHeadlineSize, photoHeadlineStep, headlineLines.length) + 42;
-  const photoCopyBoxX = pad;
-  const photoBadgeWidth = Math.min(520, Math.max(278, offerBadge.length * 13 + 92));
+  const photoHeroX = isLandscape ? Math.round(width * 0.50) : Math.round(width * 0.45);
+  const photoHeroY = isLandscape ? Math.round(height * 0.25) : Math.round(height * 0.30);
+  const photoHeroWidth = width - photoHeroX - pad + 22;
+  const photoHeroHeight = isLandscape ? Math.round(height * 0.48) : Math.round(height * 0.48);
+  const photoHeadlineY = isLandscape ? Math.round(height * 0.34) : Math.round(height * 0.34);
+  const photoSublineY = photoHeadlineY + estimateTextHeight(photoHeadlineSize, photoHeadlineStep, photoHeadlineLines.length) + (isLandscape ? 30 : 38);
+  const photoCopyBoxX = pad + 8;
   const fallbackBadgeWidth = Math.min(width - pad * 2 - 112, Math.max(330, offerBadge.length * 14 + 120));
-  const actionStripY = height - pad - 92;
+  const actionStripY = height - pad - 82;
   const proofLines = limitLines(wrapText(proofLine, isLandscape ? 40 : 34), 2, isLandscape ? 40 : 34);
   const fallbackSublineLines = limitLines(wrapText(input.subline, width >= 1200 ? 36 : 31), 2, width >= 1200 ? 36 : 31);
   const fallbackHeroX = pad + 48;
@@ -226,44 +221,47 @@ export function createArtCardSvg(input: ArtCardInput) {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(input.headline)}">
   <defs>
-    <linearGradient id="brandWash" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${brandColor}" stop-opacity="0.08"/>
-      <stop offset="48%" stop-color="${brandColor}" stop-opacity="0.02"/>
-      <stop offset="100%" stop-color="${brandColor}" stop-opacity="0.34"/>
-    </linearGradient>
-    <linearGradient id="copyShade" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${brandColor}" stop-opacity="0"/>
-      <stop offset="32%" stop-color="${brandColor}" stop-opacity="0.16"/>
-      <stop offset="76%" stop-color="${brandColor}" stop-opacity="0.84"/>
-      <stop offset="100%" stop-color="${brandColor}" stop-opacity="0.98"/>
+    <clipPath id="photoCrop"><rect x="${photoHeroX}" y="${photoHeroY}" width="${photoHeroWidth}" height="${photoHeroHeight}" rx="22"/></clipPath>
+    <linearGradient id="heroFade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fffefa" stop-opacity="0.82"/>
+      <stop offset="28%" stop-color="#fffefa" stop-opacity="0.36"/>
+      <stop offset="100%" stop-color="#fffefa" stop-opacity="0"/>
     </linearGradient>
     <filter id="logoLift" x="-30%" y="-40%" width="160%" height="180%">
       <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="${brandColor}" flood-opacity="0.72"/>
       <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="${brandColor}" flood-opacity="0.28"/>
     </filter>
-    <filter id="textLift" x="-12%" y="-14%" width="124%" height="136%">
-      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="${brandColor}" flood-opacity="0.42"/>
+    <filter id="heroShadow" x="-14%" y="-14%" width="128%" height="132%">
+      <feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="${brandColor}" flood-opacity="0.16"/>
     </filter>
   </defs>
-  <image href="${escapeXml(input.backgroundImage)}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>
-  <rect width="${width}" height="${height}" fill="url(#brandWash)"/>
-  <rect x="0" y="${Math.round(height * 0.28)}" width="${width}" height="${Math.round(height * 0.72)}" fill="url(#copyShade)"/>
-  <polygon points="0,${Math.round(height * 0.70)} ${width},${Math.round(height * 0.61)} ${width},${height} 0,${height}" fill="${brandColor}" fill-opacity="0.90"/>
-  <rect x="0" y="${height - 18}" width="${width}" height="18" fill="${accentColor}"/>
-  ${input.logoImage ? `<image href="${escapeXml(input.logoImage)}" x="${pad + 8}" y="${pad + 8}" width="${logoWidth}" height="${logoHeight}" preserveAspectRatio="xMinYMid meet" filter="url(#logoLift)"/>` : `<text x="${pad + 8}" y="${pad + 54}" fill="${brandColor}" filter="url(#logoLift)" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="900">${escapeXml(input.brandName)}</text>`}
-  <rect x="${photoCopyBoxX}" y="${photoPanelY}" width="${photoBadgeWidth}" height="58" rx="8" fill="${accentColor}"/>
-  <text x="${photoCopyBoxX + 28}" y="${photoPanelY + 38}" fill="${ctaInk}" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="900" letter-spacing="2.4">${escapeXml(offerBadge.toUpperCase())}</text>
-  <text x="${photoCopyBoxX}" y="${photoPanelY + 100}" fill="${headerInk}" filter="url(#textLift)" font-family="Arial, Helvetica, sans-serif" font-size="${photoHeadlineSize + (isLandscape ? 8 : 12)}" font-weight="900" letter-spacing="-2.2">
-${headlineLines.map((line, index) => `    <tspan x="${photoCopyBoxX}" dy="${index === 0 ? 0 : photoHeadlineStep + (isLandscape ? 8 : 12)}">${escapeXml(line)}</tspan>`).join("\n")}
+  <rect width="${width}" height="${height}" fill="#fffefa"/>
+  <path d="M 0 ${height - 196} C ${Math.round(width * 0.26)} ${height - 124}, ${Math.round(width * 0.66)} ${height - 118}, ${width} ${height - 194} L ${width} ${height} L 0 ${height} Z" fill="${brandColor}"/>
+  <path d="M 0 ${height - 204} C ${Math.round(width * 0.28)} ${height - 130}, ${Math.round(width * 0.68)} ${height - 124}, ${width} ${height - 202}" fill="none" stroke="${accentColor}" stroke-width="9"/>
+  <g clip-path="url(#photoCrop)" filter="url(#heroShadow)">
+    <rect x="${photoHeroX}" y="${photoHeroY}" width="${photoHeroWidth}" height="${photoHeroHeight}" rx="22" fill="#ffffff"/>
+    <image href="${escapeXml(input.backgroundImage)}" x="${photoHeroX}" y="${photoHeroY}" width="${photoHeroWidth}" height="${photoHeroHeight}" preserveAspectRatio="xMidYMid slice"/>
+  </g>
+  <rect x="${photoHeroX}" y="${photoHeroY}" width="${photoHeroWidth}" height="${photoHeroHeight}" fill="url(#heroFade)"/>
+  ${input.logoImage ? `<image href="${escapeXml(input.logoImage)}" x="${pad + 8}" y="${pad + 14}" width="${logoWidth + 80}" height="${logoHeight + 24}" preserveAspectRatio="xMinYMid meet"/>` : `<text x="${pad + 8}" y="${pad + 54}" fill="${brandColor}" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">${escapeXml(input.brandName)}</text>`}
+  <circle cx="${width - pad - 92}" cy="${pad + 68}" r="72" fill="${accentColor}"/>
+  <text x="${width - pad - 92}" y="${pad + 50}" text-anchor="middle" fill="${brandColor}" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900">CLEANER.</text>
+  <text x="${width - pad - 92}" y="${pad + 74}" text-anchor="middle" fill="${brandColor}" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900">FRESHER.</text>
+  <text x="${width - pad - 92}" y="${pad + 98}" text-anchor="middle" fill="${brandColor}" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900">BETTER.</text>
+  ${renderProofBubbles({ x: Math.round(width * 0.52), y: Math.round(height * 0.22), brandColor, accentColor, ink: lightCanvasInk, category: getCreativeCategory(input) })}
+  <text x="${photoCopyBoxX}" y="${photoHeadlineY}" fill="${brandColor}" font-family="Arial, Helvetica, sans-serif" font-size="${photoHeadlineSize}" font-weight="900" letter-spacing="-1.8">
+${photoHeadlineLines.map((line, index) => `    <tspan x="${photoCopyBoxX}" dy="${index === 0 ? 0 : photoHeadlineStep}">${escapeXml(line)}</tspan>`).join("\n")}
   </text>
-  <text x="${photoCopyBoxX}" y="${photoSublineY + 42}" fill="${headerInk}" fill-opacity="0.94" font-family="Arial, Helvetica, sans-serif" font-size="${photoSublineSize}" font-weight="700">
+  <text x="${photoCopyBoxX}" y="${photoSublineY}" fill="${lightCanvasInk}" fill-opacity="0.94" font-family="Arial, Helvetica, sans-serif" font-size="${photoSublineSize}" font-weight="700">
 ${sublineLines.map((line, index) => `    <tspan x="${photoCopyBoxX}" dy="${index === 0 ? 0 : photoSublineStep}">${escapeXml(line)}</tspan>`).join("\n")}
   </text>
-  <line x1="${pad}" y1="${actionStripY - 26}" x2="${width - pad}" y2="${actionStripY - 26}" stroke="${headerInk}" stroke-opacity="0.32" stroke-width="2"/>
-  <text x="${pad}" y="${actionStripY + 28}" fill="${headerInk}" fill-opacity="0.88" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="900" letter-spacing="1.8">${escapeXml(marketingLabel)}</text>
-  <text x="${pad}" y="${actionStripY + 62}" fill="${headerInk}" fill-opacity="0.76" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700">${escapeXml(host)}</text>
-  <rect x="${width - pad - ctaWidth}" y="${actionStripY}" width="${ctaWidth}" height="72" rx="10" fill="${accentColor}"/>
-  <text x="${width - pad - ctaWidth / 2}" y="${actionStripY + 47}" text-anchor="middle" fill="${ctaInk}" font-family="Arial, Helvetica, sans-serif" font-size="${cta.length > 12 ? 17 : 20}" font-weight="900" letter-spacing="1.6">${escapeXml(cta)}</text>
+  <rect x="${photoCopyBoxX}" y="${photoSublineY + estimateTextHeight(photoSublineSize, photoSublineStep, sublineLines.length) + 44}" width="${ctaWidth}" height="72" rx="12" fill="${accentColor}"/>
+  <text x="${photoCopyBoxX + ctaWidth / 2}" y="${photoSublineY + estimateTextHeight(photoSublineSize, photoSublineStep, sublineLines.length) + 90}" text-anchor="middle" fill="${ctaInk}" font-family="Arial, Helvetica, sans-serif" font-size="${cta.length > 12 ? 17 : 21}" font-weight="900" letter-spacing="1.4">${escapeXml(cta)}</text>
+  <text x="${pad + 74}" y="${height - 72}" fill="#fff9ef" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800">Trusted quality</text>
+  <line x1="${Math.round(width * 0.34)}" y1="${height - 124}" x2="${Math.round(width * 0.34)}" y2="${height - 50}" stroke="#fff9ef" stroke-opacity="0.34" stroke-width="2"/>
+  <text x="${Math.round(width * 0.39)}" y="${height - 72}" fill="#fff9ef" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800">On-time pickup</text>
+  <line x1="${Math.round(width * 0.66)}" y1="${height - 124}" x2="${Math.round(width * 0.66)}" y2="${height - 50}" stroke="#fff9ef" stroke-opacity="0.34" stroke-width="2"/>
+  <text x="${Math.round(width * 0.71)}" y="${height - 72}" fill="#fff9ef" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800">Care you can count on</text>
 </svg>`;
   }
 
@@ -296,7 +294,7 @@ ${sublineLines.map((line, index) => `    <tspan x="${photoCopyBoxX}" dy="${index
   <rect x="${pad}" y="${pad + 84}" width="${width - pad * 2}" height="20" fill="url(#posterBand)"/>
   <rect x="${pad}" y="${height - pad - 18}" width="${width - pad * 2}" height="18" fill="${accentColor}"/>
   ${input.logoImage ? `<image href="${escapeXml(input.logoImage)}" x="${pad + 36}" y="${pad + 18}" width="${logoWidth}" height="${logoHeight}" preserveAspectRatio="xMinYMid meet" filter="url(#fallbackLogoLift)"/>` : `<text x="${pad + 36}" y="${pad + 66}" fill="${headerInk}" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="900">${escapeXml(input.brandName)}</text>`}
-  <text x="${width - pad - 42}" y="${pad + 63}" text-anchor="end" fill="${headerInk}" fill-opacity="0.84" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="900" letter-spacing="2.4">${escapeXml(marketingLabel)}</text>
+  <text x="${width - pad - 42}" y="${pad + 63}" text-anchor="end" fill="${headerInk}" fill-opacity="0.78" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="900" letter-spacing="2">${escapeXml(host.toUpperCase())}</text>
   ${renderFallbackHero({
     x: fallbackHeroX,
     y: fallbackHeroY,
@@ -370,6 +368,7 @@ function estimateTextHeight(fontSize: number, lineStep: number, lineCount: numbe
 
 function getArtCardCta(input: ArtCardInput) {
   const text = `${input.headline} ${input.subline} ${input.visualDirection} ${input.marketingGoal ?? ""} ${input.offerContext ?? ""}`.toLowerCase();
+  if (text.includes("book") && text.includes("pickup")) return "BOOK PICKUP";
   if (text.includes("message") || text.includes("messenger") || text.includes("chat")) return "MESSAGE US TO BOOK";
   if (text.includes("book") || text.includes("schedule") || text.includes("appointment") || text.includes("pickup")) return "BOOK NOW";
   if (text.includes("order") || text.includes("shop") || text.includes("buy")) return "ORDER NOW";
@@ -493,6 +492,73 @@ function getHeroTag(category: CreativeCategory, angle: CampaignAngle) {
   if (category === "food") return "ORDER";
   if (category === "retail") return "SHOP";
   return "SERVICE";
+}
+
+function renderProofBubbles(input: {
+  x: number;
+  y: number;
+  brandColor: string;
+  accentColor: string;
+  ink: string;
+  category: CreativeCategory;
+}) {
+  const { x, y, brandColor, accentColor, ink, category } = input;
+  const beforeLabel = category === "property" ? "NEED" : "BEFORE";
+  const afterLabel = category === "property" ? "READY" : "AFTER";
+
+  return `
+  <g>
+    <rect x="${x - 10}" y="${y - 24}" width="100" height="38" rx="8" fill="${ink}"/>
+    <text x="${x + 40}" y="${y + 2}" text-anchor="middle" fill="#fffefa" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900">${beforeLabel}</text>
+    <circle cx="${x + 40}" cy="${y + 92}" r="70" fill="#fffefa" stroke="${brandColor}" stroke-opacity="0.14" stroke-width="3"/>
+    ${renderProofIcon({ x: x + 40, y: y + 92, brandColor, accentColor, category, variant: "before" })}
+    <path d="M ${x + 130} ${y + 92} L ${x + 178} ${y + 92}" stroke="${brandColor}" stroke-width="12" stroke-linecap="round"/>
+    <path d="M ${x + 160} ${y + 66} L ${x + 188} ${y + 92} L ${x + 160} ${y + 118}" fill="none" stroke="${brandColor}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="${x + 214}" y="${y - 24}" width="96" height="38" rx="8" fill="${brandColor}"/>
+    <text x="${x + 262}" y="${y + 2}" text-anchor="middle" fill="#fffefa" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900">${afterLabel}</text>
+    <circle cx="${x + 262}" cy="${y + 92}" r="70" fill="#fffefa" stroke="${brandColor}" stroke-opacity="0.14" stroke-width="3"/>
+    ${renderProofIcon({ x: x + 262, y: y + 92, brandColor, accentColor, category, variant: "after" })}
+  </g>`;
+}
+
+function renderProofIcon(input: {
+  x: number;
+  y: number;
+  brandColor: string;
+  accentColor: string;
+  category: CreativeCategory;
+  variant: "before" | "after";
+}) {
+  const { x, y, brandColor, accentColor, category, variant } = input;
+
+  if (category === "laundry" || category === "service") {
+    if (variant === "before") {
+      return `
+    <path d="M ${x - 42} ${y + 18} C ${x - 14} ${y - 28}, ${x + 26} ${y - 22}, ${x + 42} ${y + 16} Z" fill="${brandColor}" fill-opacity="0.22"/>
+    <path d="M ${x - 38} ${y - 8} C ${x - 8} ${y - 42}, ${x + 30} ${y - 18}, ${x + 36} ${y + 28}" fill="none" stroke="${brandColor}" stroke-width="15" stroke-linecap="round"/>
+    <path d="M ${x - 34} ${y + 22} L ${x + 34} ${y - 18}" stroke="${accentColor}" stroke-width="14" stroke-linecap="round"/>`;
+    }
+
+    return `
+    <rect x="${x - 48}" y="${y - 30}" width="96" height="24" rx="12" fill="${brandColor}" fill-opacity="0.20"/>
+    <rect x="${x - 48}" y="${y - 2}" width="96" height="24" rx="12" fill="${brandColor}" fill-opacity="0.32"/>
+    <rect x="${x - 48}" y="${y + 26}" width="96" height="24" rx="12" fill="${brandColor}" fill-opacity="0.46"/>
+    <path d="M ${x - 48} ${y - 30} H ${x + 48}" stroke="${accentColor}" stroke-width="7" stroke-linecap="round"/>`;
+  }
+
+  if (category === "food") {
+    return variant === "before"
+      ? `<ellipse cx="${x}" cy="${y}" rx="48" ry="34" fill="${brandColor}" fill-opacity="0.20"/><path d="M ${x - 28} ${y} C ${x - 8} ${y - 28}, ${x + 26} ${y - 12}, ${x + 30} ${y + 18}" fill="none" stroke="${accentColor}" stroke-width="12" stroke-linecap="round"/>`
+      : `<ellipse cx="${x}" cy="${y + 8}" rx="54" ry="34" fill="${accentColor}"/><ellipse cx="${x}" cy="${y + 8}" rx="34" ry="20" fill="#fffefa" fill-opacity="0.72"/>`;
+  }
+
+  if (category === "property") {
+    return variant === "before"
+      ? `<rect x="${x - 44}" y="${y - 28}" width="88" height="66" rx="12" fill="${brandColor}" fill-opacity="0.20"/><path d="M ${x - 40} ${y - 28} L ${x} ${y - 58} L ${x + 40} ${y - 28}" fill="none" stroke="${accentColor}" stroke-width="10" stroke-linecap="round"/>`
+      : `<rect x="${x - 48}" y="${y - 34}" width="96" height="76" rx="12" fill="${brandColor}" fill-opacity="0.86"/><rect x="${x - 18}" y="${y - 2}" width="36" height="44" rx="6" fill="#fffefa"/><path d="M ${x - 48} ${y - 34} L ${x} ${y - 68} L ${x + 48} ${y - 34}" fill="${accentColor}"/>`;
+  }
+
+  return `<rect x="${x - 48}" y="${y - 32}" width="96" height="72" rx="14" fill="${variant === "before" ? brandColor : accentColor}" fill-opacity="${variant === "before" ? "0.24" : "1"}"/><path d="M ${x - 22} ${y + 4} L ${x - 2} ${y + 24} L ${x + 28} ${y - 20}" fill="none" stroke="${variant === "before" ? accentColor : brandColor}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
 
 function renderCategoryVisual(input: {

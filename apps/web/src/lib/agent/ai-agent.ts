@@ -71,7 +71,7 @@ function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
   return {
     model,
     instructions:
-      "You are Orbit's senior social media creator, direct-response copywriter, and professional graphic-design art director. Think like a working creative lead preparing real client assets for posting: choose a sharp campaign angle, write platform-native copy, and direct a clean pub mat/poster layout that could be handed to a designer. Every draft must communicate one offer, one customer benefit, one visual idea, and one clear next step while staying truthful to the source. Return only structured JSON that matches the schema.",
+      "You are Orbit's senior social media creator, direct-response copywriter, and professional graphic-design art director. Your first job is to infer the brand's existing posting system from Brand DNA: recurring layouts, logo use, headline style, CTA treatment, proof blocks, colors, photo style, and service/product motifs. Then create a campaign-specific art-card concept that feels like the brand would actually post it. Every draft must communicate one offer, one customer benefit, one visual idea, and one clear next step while staying truthful to the source. Return only structured JSON that matches the schema.",
     input: [
       {
         role: "user",
@@ -98,8 +98,8 @@ function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
               rules: [
                 "Write one draft for each requested platform.",
                 "First decide the campaign angle internally: booking, limited offer, launch, local visit, property inquiry, event, useful guide, or social proof. Make every field support that same angle.",
-                "Then choose a static-ad format internally: problem-solution, before-after, review/proof, comparison, offer stack, founder/brand POV, or advertorial-style static. Use the format that best fits the available facts.",
-                "Build the art card like a mobile feed ad, not a flyer: one dominant hero visual, one hook, one proof or offer detail, and one CTA. Avoid extra body copy on the image.",
+                "Then choose a static-ad format internally: problem-solution, before-after, review/proof, comparison, offer stack, founder/brand POV, or advertorial-style static. Use the format that best fits the brand's actual post style and the available facts.",
+                "Build the art card like a brand-native mobile feed ad, not a generic flyer: one dominant hero visual, one hook, one proof or offer detail, and one CTA. Avoid extra body copy on the image.",
                 "Keep captions specific to the platform, audience, funnel stage, and desired customer action.",
                 "Lead captions with a concrete customer situation, useful benefit, offer detail, or product truth. Never lead with generic announcement language like 'Exciting news' or 'We are thrilled'.",
                 "Use only prices, dates, features, proof, locations, and terms explicitly present in the source or brand context.",
@@ -108,9 +108,9 @@ function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
                 "Use mediaType VIDEO only for TikTok unless the platform clearly benefits from video.",
                 "Write a pub-mat artHeadline of 3 to 7 words. It must read like a poster headline: direct, commercial, and instantly understandable. Never use vague lines like 'Your moment starts here'.",
                 "Write an artSubline of 6 to 16 words that adds a different benefit, proof point, term, deadline, location, or reason to act. Do not echo the headline.",
-                "Create a concrete visualDirection like a professional art director: specify hero subject, action, setting, composition, crop, brand-color placement, foreground/background relationship, and negative space for copy.",
-                "Make the visualDirection describe a real shootable scene for the product/service, not an abstract design: what is in the frame, where it sits, what the customer is doing, and what detail proves the offer.",
-                "For the pub mat, avoid clutter. The design should have clear hierarchy: brand, dominant visual idea, offer badge, headline, supporting benefit, proof/reason, CTA.",
+                "Create the visualDirection as a full art-card concept prompt, not just a photo prompt. Include: chosen ad format, layout structure, logo placement, headline placement, product/photo treatment, proof elements, CTA treatment, color use, and what should remain untouched by text.",
+                "Make the visualDirection describe a real brand-post composition. For example: white canvas, brand logo top-left, large stacked headline on left, product/service hero on right, before/after proof circles, yellow CTA button, teal footer trust bar. Only use this example when it matches the brand evidence.",
+                "For the pub mat, avoid clutter. The design should have clear hierarchy: brand, dominant visual idea, headline, supporting benefit, proof/reason, CTA. Never plan text over the main product, face, garment, food, property feature, or other hero subject.",
                 "Show the product or service being used in a believable customer moment. Avoid generic smiling portraits, mood-only imagery, collages, floating graphics, fake UI, and text inside the generated scene.",
                 "Do not put hashtags, unsupported prices, or unverifiable claims in the art card copy.",
                 "Never use the brand's banned phrases.",

@@ -72,6 +72,11 @@ describe("art cards", () => {
     expect(svg).toContain("logoLift");
     expect(svg).toContain("BOOK NOW");
     expect((svg.match(/BOOK NOW/g) ?? [])).toHaveLength(1);
+    expect(svg).toContain("photoCrop");
+    expect(svg).toContain("BEFORE");
+    expect(svg).toContain("AFTER");
+    expect(svg).toContain("Trusted quality");
+    expect(svg).not.toContain("Promotion");
     expect(svg).not.toContain('fill="#ffffff" fill-opacity="0.95"');
     expect(svg).not.toContain('fill="#ffffff" fill-opacity="0.96"');
     expect(svg).not.toContain("REALISTIC CAMPAIGN CARD");
@@ -80,6 +85,29 @@ describe("art cards", () => {
     expect(svg).not.toContain("#080b09");
     expect(svg).not.toContain("#000000");
     expect(svg).not.toContain("photoShade");
+  });
+
+  it("keeps generated photos separate from copy and ignores generic eyebrow stamps", () => {
+    const svg = createArtCardSvg({
+      brandName: "The Laundry Project",
+      eyebrow: "Education",
+      headline: "Laundry Pickup, Done Right",
+      subline: "Wash, fold, dry clean, and delivery with one easy booking.",
+      visualDirection: "Realistic laundry service photo with folded clothes and garment bags.",
+      platform: "INSTAGRAM",
+      backgroundImage: "data:image/jpeg;base64,laundryPhoto",
+      brandColor: "#007ea7",
+      accentColor: "#f4c430",
+      websiteHost: "thelaundryproject.ph",
+      marketingGoal: "Drive laundry pickup bookings through Messenger.",
+      offerContext: "Laundry pickup, wash, fold, dry clean, and delivery. Book through Messenger."
+    });
+
+    expect(svg).toContain("photoCrop");
+    expect(svg).toContain("BEFORE");
+    expect(svg).toContain("AFTER");
+    expect(svg).not.toContain("Education");
+    expect(svg).not.toContain("EDUCATION");
   });
 
   it("keeps logo treatment clean and prevents long copy from crowding the card", () => {
@@ -101,7 +129,7 @@ describe("art cards", () => {
     expect(svg).toContain("logoLift");
     expect(svg).not.toContain('fill="#ffffff" fill-opacity="0.95"');
     expect(svg).not.toContain('fill="#ffffff" fill-opacity="0.96"');
-    expect((svg.match(/BOOK NOW/g) ?? [])).toHaveLength(1);
+    expect((svg.match(/BOOK PICKUP/g) ?? [])).toHaveLength(1);
     expect((svg.match(/<tspan/g) ?? []).length).toBeLessThanOrEqual(7);
   });
 });
