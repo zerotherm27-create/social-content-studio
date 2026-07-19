@@ -11,6 +11,11 @@ describe("generateDrafts", () => {
       campaignTitle: "Summer cold brew flight",
       goal: "Launch a new product",
       source: "Three new cold brew flavors with a first-week discount.",
+      offers: "Cold brew flight",
+      visualStyle: "Editorial product photography",
+      bannedPhrases: "best in the city",
+      tone: "Warm",
+      creativeDirection: "Natural afternoon light and tactile ingredients",
       platforms: [Platform.FACEBOOK, Platform.GOOGLE_BUSINESS, Platform.LINKEDIN]
     });
 

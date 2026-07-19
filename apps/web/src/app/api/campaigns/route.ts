@@ -10,6 +10,8 @@ const createCampaignSchema = z.object({
   title: z.string().min(2),
   goal: z.string().min(2),
   source: z.string().min(2),
+  tone: z.string().max(80).optional().default(""),
+  creativeDirection: z.string().max(1000).optional().default(""),
   platforms: z.array(z.enum(platformValues)).min(1)
 });
 
@@ -31,6 +33,8 @@ export async function POST(request: Request) {
       title: payload.title,
       goal: payload.goal,
       source: payload.source,
+      tone: payload.tone,
+      creativeDirection: payload.creativeDirection,
       targetPlatforms: JSON.stringify(payload.platforms)
     }
   });

@@ -9,6 +9,11 @@ type GenerateDraftsInput = {
   campaignTitle: string;
   goal: string;
   source: string;
+  offers: string;
+  visualStyle: string;
+  bannedPhrases: string;
+  tone: string;
+  creativeDirection: string;
   platforms: PlatformValue[];
 };
 
@@ -19,10 +24,13 @@ type AgentOptions = {
 };
 
 const generatedDraftSchema = z.object({
-  platform: z.enum([Platform.FACEBOOK, Platform.INSTAGRAM, Platform.GOOGLE_BUSINESS, Platform.TIKTOK, Platform.LINKEDIN]),
+  platform: z.enum([Platform.FACEBOOK, Platform.INSTAGRAM, Platform.THREADS, Platform.GOOGLE_BUSINESS, Platform.TIKTOK, Platform.LINKEDIN]),
   caption: z.string().min(1),
   mediaType: z.enum([MediaType.TEXT, MediaType.IMAGE, MediaType.VIDEO]),
-  hashtags: z.array(z.string().min(1)).min(1).max(8)
+  hashtags: z.array(z.string().min(1)).min(1).max(8),
+  artHeadline: z.string().min(1).max(72),
+  artSubline: z.string().min(1).max(140),
+  visualDirection: z.string().min(1).max(500)
 });
 
 const generatedDraftsSchema = z.object({
@@ -46,8 +54,7 @@ export async function generateAgentDrafts(input: GenerateDraftsInput, options: A
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(`OpenAI generation failed: ${response.status} ${message}`);
+    throw new Error(`AI draft generation failed with status ${response.status}. Please try again.`);
   }
 
   const payload = await response.json();
@@ -64,7 +71,7 @@ function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
   return {
     model,
     instructions:
-      "You are a careful social media content agent. Generate concise, platform-specific drafts that match the brand memory. Return only structured JSON that matches the schema.",
+      "You are a senior direct-response creative strategist and social copywriter. Turn the supplied facts into campaign-ready marketing, not generic inspirational content. Every draft must communicate one offer, one customer benefit, and one clear next step while staying truthful to the source. Return only structured JSON that matches the schema.",
     input: [
       {
         role: "user",
@@ -75,20 +82,36 @@ function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
               brand: {
                 name: input.brandName,
                 voice: input.voice,
-                audience: input.audience
+                audience: input.audience,
+                offers: input.offers,
+                visualStyle: input.visualStyle,
+                bannedPhrases: input.bannedPhrases
               },
               campaign: {
                 title: input.campaignTitle,
                 goal: input.goal,
-                source: input.source
+                source: input.source,
+                tone: input.tone,
+                creativeDirection: input.creativeDirection
               },
               platforms: input.platforms,
               rules: [
                 "Write one draft for each requested platform.",
-                "Keep captions specific to the platform and audience.",
+                "Choose the single strongest marketing angle for the stated audience and goal; do not combine multiple messages.",
+                "Keep captions specific to the platform, audience, funnel stage, and desired customer action.",
+                "Lead captions with a concrete customer situation, useful benefit, offer detail, or product truth—not a generic announcement.",
+                "Use only prices, dates, features, proof, locations, and terms explicitly present in the source or brand context.",
+                "End promotional captions with one natural, specific call to action. Do not repeat the same line from the art card.",
                 "Use 2 to 6 relevant hashtags.",
                 "Use mediaType VIDEO only for TikTok unless the platform clearly benefits from video.",
-                "Avoid unverifiable guarantees and regulated claims."
+                "Write a punchy artHeadline of 3 to 7 words. It must make the offer, problem, transformation, or occasion immediately clear; never reuse the campaign title unless it already does that job.",
+                "Write an artSubline of 6 to 16 words that adds a distinct benefit, proof point, term, or reason to act. Do not echo the headline.",
+                "Create a concrete visualDirection for a commercial photographer: specify the hero subject, action, setting, crop, brand-color placement, and intentional negative space for copy.",
+                "Show the product or service being used in a believable customer moment. Avoid generic smiling portraits, mood-only imagery, collages, floating graphics, fake UI, and text inside the scene.",
+                "Do not put hashtags, unsupported prices, or unverifiable claims in the art card copy.",
+                "Never use the brand's banned phrases.",
+                "Avoid unverifiable guarantees, vague superlatives, AI copywriting clichés, and regulated claims.",
+                "Facebook should feel human and community-aware; Instagram should be visually sharp and saveable; Google Business should prioritize local intent and immediate action; Threads should feel conversational; TikTok should open with motion; LinkedIn should lead with useful business relevance."
               ]
             })
           }
@@ -110,7 +133,7 @@ function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
               items: {
                 type: "object",
                 additionalProperties: false,
-                required: ["platform", "caption", "mediaType", "hashtags"],
+                required: ["platform", "caption", "mediaType", "hashtags", "artHeadline", "artSubline", "visualDirection"],
                 properties: {
                   platform: {
                     type: "string",
@@ -130,7 +153,10 @@ function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
                     items: {
                       type: "string"
                     }
-                  }
+                  },
+                  artHeadline: { type: "string", maxLength: 72 },
+                  artSubline: { type: "string", maxLength: 140 },
+                  visualDirection: { type: "string", maxLength: 500 }
                 }
               }
             }

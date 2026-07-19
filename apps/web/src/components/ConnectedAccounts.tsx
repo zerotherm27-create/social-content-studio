@@ -1,9 +1,9 @@
-import type { SocialAccount } from "@prisma/client";
 import Link from "next/link";
+import type { PublicSocialAccount } from "@/components/AgentWorkspace";
 import { Platform } from "@/lib/domain";
 import { getPlatformDefinition, platformDefinitions } from "@/lib/platforms";
 
-export function ConnectedAccounts({ accounts, brandId }: { accounts: SocialAccount[]; brandId: string }) {
+export function ConnectedAccounts({ accounts, brandId }: { accounts: PublicSocialAccount[]; brandId: string }) {
   return (
     <section className="panel">
       <p className="eyebrow">Direct integrations</p>
@@ -16,6 +16,18 @@ export function ConnectedAccounts({ accounts, brandId }: { accounts: SocialAccou
             <p>{account.connected ? "Connected" : "OAuth setup pending"}</p>
             {account.platform === Platform.GOOGLE_BUSINESS ? (
               <Link className="buttonLink accountAction" href={`/api/integrations/google/connect?brandId=${brandId}`}>
+                {account.connected ? "Reconnect" : "Connect"}
+              </Link>
+            ) : account.platform === Platform.FACEBOOK ? (
+              <Link className="buttonLink accountAction" href={`/api/integrations/meta/connect?brandId=${brandId}`}>
+                {account.connected ? "Reconnect" : "Connect"}
+              </Link>
+            ) : account.platform === Platform.INSTAGRAM ? (
+              <Link className="buttonLink accountAction" href={`/api/integrations/meta/connect?brandId=${brandId}`}>
+                {account.connected ? "Reconnect" : "Connect via Meta"}
+              </Link>
+            ) : account.platform === Platform.THREADS ? (
+              <Link className="buttonLink accountAction" href={`/api/integrations/threads/connect?brandId=${brandId}`}>
                 {account.connected ? "Reconnect" : "Connect"}
               </Link>
             ) : (

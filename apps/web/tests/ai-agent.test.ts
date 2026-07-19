@@ -9,6 +9,11 @@ const baseInput = {
   campaignTitle: "Summer cold brew flight",
   goal: "Launch a new product",
   source: "Three new cold brew flavors with a first-week discount.",
+  offers: "Cold brew flight",
+  visualStyle: "Editorial product photography",
+  bannedPhrases: "best in the city",
+  tone: "Warm",
+  creativeDirection: "Natural afternoon light and tactile ingredients",
   platforms: [Platform.FACEBOOK, Platform.GOOGLE_BUSINESS]
 };
 
@@ -34,13 +39,19 @@ describe("generateAgentDrafts", () => {
               platform: Platform.FACEBOOK,
               caption: "Fresh AI copy for Facebook.",
               mediaType: MediaType.IMAGE,
-              hashtags: ["#luna", "#coldbrew"]
+              hashtags: ["#luna", "#coldbrew"],
+              artHeadline: "Meet the summer flight",
+              artSubline: "Three cold brews made for slow afternoons.",
+              visualDirection: "Three glasses in natural afternoon light."
             },
             {
               platform: Platform.GOOGLE_BUSINESS,
               caption: "Fresh AI copy for Google Business Profile.",
               mediaType: MediaType.IMAGE,
-              hashtags: ["#local", "#coffee"]
+              hashtags: ["#local", "#coffee"],
+              artHeadline: "A cooler coffee break",
+              artSubline: "Try the new flight this week.",
+              visualDirection: "A clean counter scene with the flight centered."
             }
           ]
         })
@@ -75,7 +86,10 @@ describe("parseOpenAIResponseText", () => {
             platform: Platform.LINKEDIN,
             caption: "A professional launch note.",
             mediaType: MediaType.TEXT,
-            hashtags: ["#launch"]
+            hashtags: ["#launch"],
+            artHeadline: "A useful launch",
+            artSubline: "Built from a real customer need.",
+            visualDirection: "Editorial typographic art card."
           }
         ]
       })
@@ -86,7 +100,10 @@ describe("parseOpenAIResponseText", () => {
         platform: Platform.LINKEDIN,
         caption: "A professional launch note.",
         mediaType: MediaType.TEXT,
-        hashtags: ["#launch"]
+        hashtags: ["#launch"],
+        artHeadline: "A useful launch",
+        artSubline: "Built from a real customer need.",
+        visualDirection: "Editorial typographic art card."
       }
     ]);
   });

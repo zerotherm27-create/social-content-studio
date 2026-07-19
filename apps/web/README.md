@@ -18,7 +18,7 @@ The app runs at `http://127.0.0.1:3001`.
 
 Draft generation uses the OpenAI Responses API when `OPENAI_API_KEY` is set. Without a key, the app falls back to deterministic mock generation so local development still works.
 
-Copy `.env.example` to `.env` and set:
+Copy `.env.example` to `.env`, set `DATABASE_URL` to your Supabase Transaction Pooler connection string, and set:
 
 ```bash
 OPENAI_API_KEY="sk-..."
@@ -37,4 +37,23 @@ GOOGLE_CLIENT_SECRET="..."
 GOOGLE_REDIRECT_URI="http://127.0.0.1:3001/api/integrations/google/callback"
 ```
 
-Local OAuth tokens are stored in the development SQLite database for testing. Production should encrypt tokens and use a durable hosted database.
+OAuth tokens are stored in the configured Supabase Postgres database. Production should encrypt tokens before broad public launch.
+
+## Meta Facebook Page
+
+The Meta connector uses Facebook Login for Business, reads managed Pages from `/me/accounts`, and imports recent Page posts for Brand DNA learning. Configure a Meta Developer app with Facebook Login for Business and add this valid OAuth redirect URI:
+
+```bash
+http://127.0.0.1:3001/api/integrations/meta/callback
+```
+
+Set these values before clicking the Facebook connector:
+
+```bash
+META_APP_ID="..."
+META_APP_SECRET="..."
+META_REDIRECT_URI="http://127.0.0.1:3001/api/integrations/meta/callback"
+META_GRAPH_VERSION="v23.0"
+```
+
+The connector requests `pages_show_list`, `pages_read_engagement`, and `business_management`. In development mode, connect with a Meta account that has a role on the Meta app and can manage the target Facebook Page.

@@ -27,6 +27,11 @@ export async function POST(_request: Request, context: { params: Promise<{ campa
     campaignTitle: campaign.title,
     goal: campaign.goal,
     source: campaign.source,
+    offers: campaign.brand.offers,
+    visualStyle: campaign.brand.visualStyle,
+    bannedPhrases: campaign.brand.bannedPhrases,
+    tone: campaign.tone,
+    creativeDirection: campaign.creativeDirection,
     platforms
   });
 
@@ -49,6 +54,9 @@ export async function POST(_request: Request, context: { params: Promise<{ campa
         caption: draft.caption,
         mediaType: draft.mediaType,
         hashtags: JSON.stringify(draft.hashtags),
+        artHeadline: draft.artHeadline,
+        artSubline: draft.artSubline,
+        visualDirection: draft.visualDirection,
         riskLevel: policy.riskLevel,
         approvalStatus: policy.status
       }

@@ -5,13 +5,14 @@
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3001",
     "build": "next build",
+    "postinstall": "prisma generate",
     "start": "next start --hostname 127.0.0.1 --port 3001",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:generate": "prisma generate",
-    "db:push": "sqlite3 prisma/dev.db < prisma/schema.sql",
+    "db:push": "prisma db push",
     "db:seed": "tsx src/lib/seed.ts"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sharp": "^0.35.3",
     "zod": "^3.24.0"
   },
   "devDependencies": {

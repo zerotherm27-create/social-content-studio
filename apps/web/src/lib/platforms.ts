@@ -24,6 +24,13 @@ export const platformDefinitions: PlatformDefinition[] = [
     defaultRequiresReview: false
   },
   {
+    platform: Platform.THREADS,
+    label: "Threads",
+    shortLabel: "Threads",
+    supportedMedia: [MediaType.TEXT, MediaType.IMAGE],
+    defaultRequiresReview: false
+  },
+  {
     platform: Platform.GOOGLE_BUSINESS,
     label: "Google Business Profile",
     shortLabel: "Google",

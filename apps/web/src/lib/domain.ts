@@ -18,6 +18,7 @@ export type CampaignStatus = (typeof CampaignStatus)[keyof typeof CampaignStatus
 export const Platform = {
   FACEBOOK: "FACEBOOK",
   INSTAGRAM: "INSTAGRAM",
+  THREADS: "THREADS",
   GOOGLE_BUSINESS: "GOOGLE_BUSINESS",
   TIKTOK: "TIKTOK",
   LINKEDIN: "LINKEDIN"

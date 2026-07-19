@@ -1,0 +1,8 @@
+ALTER TABLE "Campaign"
+ADD COLUMN "tone" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "creativeDirection" TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE "ContentDraft"
+ADD COLUMN "artHeadline" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "artSubline" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "visualDirection" TEXT NOT NULL DEFAULT '';
