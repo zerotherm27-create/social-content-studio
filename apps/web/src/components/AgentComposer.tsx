@@ -123,11 +123,11 @@ export function AgentComposer({
           </label>
           <label>
             Marketing objective
-            <textarea required minLength={2} value={goal} onChange={(event) => setGoal(event.target.value)} rows={3} placeholder="Example: Drive weekday bookings from nearby condo residents." />
+            <textarea required minLength={2} value={goal} onChange={(event) => setGoal(event.target.value)} rows={3} placeholder="Example: Drive Messenger bookings from nearby condo residents this week." />
           </label>
           <label>
-            Verified offer details
-            <textarea required minLength={2} value={source} onChange={(event) => setSource(event.target.value)} rows={6} placeholder="Add the offer, customer benefit, price, deadline, location, terms, proof points, and exact next step. Orbit will only use details entered here." />
+            Offer, proof, and CTA
+            <textarea required minLength={2} value={source} onChange={(event) => setSource(event.target.value)} rows={6} placeholder="Add the exact offer, who it is for, why it matters, price or terms, deadline, location, proof points, and the action to take. Orbit will only use details entered here." />
           </label>
           {brandOffers.trim() ? (
             <button className="sourceAssist" type="button" onClick={() => setSource(brandOffers)}>
@@ -136,7 +136,7 @@ export function AgentComposer({
           ) : null}
           <label>
             Creative direction <span className="optionalLabel">optional</span>
-            <textarea value={creativeDirection} onChange={(event) => setCreativeDirection(event.target.value)} rows={4} placeholder={brandVisualStyle || "Describe the hero product or service moment, setting, people, props, and brand-color details."} />
+            <textarea value={creativeDirection} onChange={(event) => setCreativeDirection(event.target.value)} rows={4} placeholder={brandVisualStyle || "Describe the pub-mat look: hero product/service moment, setting, customer action, props, brand colors, and where text should sit."} />
           </label>
 
           <div className="toneControl" role="group" aria-label="Campaign tone">
@@ -188,7 +188,7 @@ export function AgentComposer({
         <div aria-live="polite">
           <strong>{error ? "Campaign needs attention" : success ? "Campaign ready" : "Ready when the brief is accurate"}</strong>
           <span className={error ? "submitError" : success ? "submitSuccess" : ""}>
-            {error || success || "Orbit will turn one verified offer into platform-specific copy and a marketing-ready publication asset for every selected channel."}
+            {error || success || "Orbit will turn one verified offer into platform-specific copy, art direction, and a marketing-ready pub mat for every selected channel."}
           </span>
         </div>
         <button type="submit" disabled={isGenerating || !canSubmit}>
