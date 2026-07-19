@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import { loadDraftArtCardSvg } from "@/lib/draft-art-card";
+import { loadDraftArtCardAsset } from "@/lib/draft-art-card";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,18 +7,20 @@ export const maxDuration = 60;
 
 export async function GET(_request: Request, context: { params: Promise<{ draftId: string }> }) {
   const { draftId } = await context.params;
-  const result = await loadDraftArtCardSvg(draftId);
+  const result = await loadDraftArtCardAsset(draftId);
 
   if (!result) {
     return new Response("Draft not found", { status: 404, headers: { "Cache-Control": "no-store" } });
   }
 
-  const png = await sharp(Buffer.from(result.svg)).png().toBuffer();
+  const png = result.kind === "image"
+    ? await sharp(result.body).png().toBuffer()
+    : await sharp(Buffer.from(result.svg)).png().toBuffer();
 
-  return new Response(png, {
+  return new Response(new Uint8Array(png), {
     headers: {
       "Content-Type": "image/png",
-      "Cache-Control": result.generatedPhoto
+      "Cache-Control": result.kind === "image"
         ? "public, max-age=3600, s-maxage=3600, stale-while-revalidate=60"
         : "no-store"
     }

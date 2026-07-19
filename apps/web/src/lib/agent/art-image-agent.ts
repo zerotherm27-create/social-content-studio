@@ -1,4 +1,4 @@
-type ArtImageInput = {
+export type ArtImageInput = {
   brandName: string;
   headline: string;
   subline: string;
@@ -18,35 +18,82 @@ type ArtImageOptions = {
   fetcher?: typeof fetch;
 };
 
+export async function generatePremiumArtCardImage(input: ArtImageInput, options: ArtImageOptions = {}) {
+  const apiKey = options.apiKey ?? process.env.OPENAI_API_KEY;
+  if (!apiKey) return undefined;
+  const model = options.model ?? process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2";
+  const outputFormat = "png";
+
+  return generateImageDataUrl({
+    apiKey,
+    model,
+    fetcher: options.fetcher,
+    prompt: buildPremiumArtCardPrompt(input),
+    size: getPremiumArtCardSize(input.platform, model),
+    quality: process.env.OPENAI_PREMIUM_IMAGE_QUALITY ?? process.env.OPENAI_IMAGE_QUALITY ?? "high",
+    outputFormat,
+    outputCompression: undefined,
+    logContext: "Premium art-card image generation"
+  });
+}
+
 export async function generateArtCardPhoto(input: ArtImageInput, options: ArtImageOptions = {}) {
   const apiKey = options.apiKey ?? process.env.OPENAI_API_KEY;
   if (!apiKey) return undefined;
   const model = options.model ?? process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2";
 
+  return generateImageDataUrl({
+    apiKey,
+    model,
+    fetcher: options.fetcher,
+    prompt: buildArtImagePrompt(input),
+    size: getImageGenerationSize(input.platform, model),
+    quality: process.env.OPENAI_IMAGE_QUALITY ?? "medium",
+    outputFormat: "jpeg",
+    outputCompression: 88,
+    logContext: "Art image generation"
+  });
+}
+
+async function generateImageDataUrl(input: {
+  apiKey: string;
+  model: string;
+  fetcher?: typeof fetch;
+  prompt: string;
+  size: string;
+  quality: string;
+  outputFormat: "jpeg" | "png" | "webp";
+  outputCompression?: number;
+  logContext: string;
+}) {
+  const body: Record<string, unknown> = {
+    model: input.model,
+    prompt: input.prompt,
+    size: input.size,
+    quality: input.quality,
+    output_format: input.outputFormat,
+    background: "opaque",
+    n: 1
+  };
+
+  if (typeof input.outputCompression === "number") {
+    body.output_compression = input.outputCompression;
+  }
+
   let response: Response;
   try {
-    response = await (options.fetcher ?? fetch)("https://api.openai.com/v1/images/generations", {
+    response = await (input.fetcher ?? fetch)("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${input.apiKey}`,
         "Content-Type": "application/json"
       },
       signal: AbortSignal.timeout(55_000),
-      body: JSON.stringify({
-        model,
-        prompt: buildArtImagePrompt(input),
-        size: getImageGenerationSize(input.platform),
-        quality: process.env.OPENAI_IMAGE_QUALITY ?? "medium",
-        output_format: "jpeg",
-        output_compression: 88,
-        background: "opaque",
-        n: 1
-      })
+      body: JSON.stringify(body)
     });
   } catch (error) {
-    console.error("Art image generation request failed", {
-      model,
-      headline: input.headline,
+    console.error(`${input.logContext} request failed`, {
+      model: input.model,
       message: error instanceof Error ? error.message : String(error)
     });
     return undefined;
@@ -54,10 +101,9 @@ export async function generateArtCardPhoto(input: ArtImageInput, options: ArtIma
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    console.error("Art image generation failed", {
+    console.error(`${input.logContext} failed`, {
       status: response.status,
-      model,
-      headline: input.headline,
+      model: input.model,
       message: message.slice(0, 700)
     });
     return undefined;
@@ -65,7 +111,41 @@ export async function generateArtCardPhoto(input: ArtImageInput, options: ArtIma
 
   const payload = await response.json() as { data?: Array<{ b64_json?: string }> };
   const image = payload.data?.[0]?.b64_json;
-  return image ? `data:image/jpeg;base64,${image}` : undefined;
+  return image ? `data:image/${input.outputFormat};base64,${image}` : undefined;
+}
+
+export function buildPremiumArtCardPrompt(input: ArtImageInput) {
+  const exactHeadline = input.headline.trim();
+  const exactSubline = input.subline.trim();
+  const brandColorDirection = [
+    input.brandColor ? `Primary brand color: ${input.brandColor}.` : "",
+    input.accentColor ? `Accent color: ${input.accentColor}.` : ""
+  ].filter(Boolean).join(" ");
+
+  return [
+    "Create one finished premium social-media art card as a polished raster image, not a template, not an SVG, and not a UI mockup.",
+    `Format: ${getPlatformFormatDirection(input.platform)}. The composition must be ready to post as a complete marketing graphic.`,
+    "Act like a senior brand designer and paid-social creative director. Use editorial spacing, visual hierarchy, clean typography, generous safe zones, and a modern commercial layout.",
+    "The image must look like a real brand post designed for Instagram/Facebook/Threads, not like a simple generated flyer.",
+    "Use a realistic photographic hero scene integrated into the layout. The photo should support the offer and feel professionally shot, with natural light, tactile detail, believable scale, and no AI artifacts.",
+    "Design the full art card yourself: background, photo crop, brand lockup area, headline hierarchy, supporting line, proof or benefit elements, CTA treatment, and tasteful graphic accents.",
+    "Avoid overlap. No text may cover faces, products, garments, food, property features, hands, important service details, or the CTA.",
+    "Avoid clutter. Use one dominant hero visual, one headline, one short supporting line, one CTA, and at most three proof/benefit cues.",
+    "Do not add generic stamps such as EDUCATION, PROMOTION, MARKETING CARD, READY TO POST, or SAMPLE.",
+    "Do not invent unsupported prices, ratings, awards, guarantees, dates, certifications, or discounts.",
+    "If rendering text, render only the supplied brand/copy/CTA text, spell it exactly, keep it large and legible, and do not add lorem ipsum or fake small print.",
+    `Brand name text: ${input.brandName}.`,
+    `Main headline text, exact spelling: ${exactHeadline}.`,
+    `Supporting line text, exact spelling: ${exactSubline}.`,
+    `CTA text: ${getPromptCta(input)}.`,
+    input.websiteHost ? `Optional small brand/source text: ${input.websiteHost}.` : "",
+    input.audience ? `Target customer: ${input.audience}.` : "",
+    input.offerContext ? `Verified offer/context: ${input.offerContext}.` : "",
+    input.campaignGoal ? `Marketing objective: ${input.campaignGoal}.` : "",
+    brandColorDirection,
+    `Brand/posting style and campaign art direction to apply: ${input.visualDirection}.`,
+    "Quality bar: premium Canva/agency-level paid social creative with intentional composition, not a generic stock-photo overlay."
+  ].filter(Boolean).join(" ");
 }
 
 export function buildArtImagePrompt(input: ArtImageInput) {
@@ -123,6 +203,37 @@ function getPlatformFormatDirection(platform?: string) {
   }
 }
 
-function getImageGenerationSize(platform?: string) {
+function getImageGenerationSize(platform?: string, model?: string) {
+  if (model?.startsWith("gpt-image-2")) return getPremiumArtCardSize(platform, model);
   return platform === "GOOGLE_BUSINESS" ? "1536x1024" : "1024x1536";
+}
+
+function getPremiumArtCardSize(platform?: string, model?: string) {
+  if (!model?.startsWith("gpt-image-2")) {
+    return platform === "GOOGLE_BUSINESS" ? "1536x1024" : "1024x1536";
+  }
+
+  switch (platform) {
+    case "TIKTOK":
+    case "INSTAGRAM_STORY":
+      return "1088x1936";
+    case "GOOGLE_BUSINESS":
+      return "1536x1024";
+    case "FACEBOOK":
+    case "INSTAGRAM":
+    case "THREADS":
+    case "LINKEDIN":
+    default:
+      return "1088x1360";
+  }
+}
+
+function getPromptCta(input: ArtImageInput) {
+  const text = `${input.headline} ${input.subline} ${input.visualDirection} ${input.offerContext ?? ""} ${input.campaignGoal ?? ""}`.toLowerCase();
+  if (text.includes("book") && text.includes("pickup")) return "Book Pickup";
+  if (text.includes("message") || text.includes("messenger") || text.includes("chat")) return "Message Us";
+  if (text.includes("book") || text.includes("schedule") || text.includes("appointment") || text.includes("pickup")) return "Book Now";
+  if (text.includes("order") || text.includes("shop") || text.includes("buy")) return "Order Now";
+  if (text.includes("visit") || text.includes("store") || text.includes("location")) return "Visit Us";
+  return "Learn More";
 }
