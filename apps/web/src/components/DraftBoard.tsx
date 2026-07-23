@@ -71,7 +71,7 @@ export function DraftBoard({ drafts }: { drafts: ContentDraft[] }) {
         ) : (
           drafts.map((draft) => (
             <article className="draftCard" key={draft.id}>
-              <img className="draftArtCard" src={`/api/drafts/${draft.id}/artcard`} alt={`${draft.artHeadline || "Generated"} art card`} />
+              <img className="draftArtCard" src={`/api/drafts/${draft.id}/artcard`} alt={`${draft.artHeadline || "Generated"} art card`} loading="lazy" decoding="async" />
               <header>
                 <strong>{draft.platform.replace("_", " ")}</strong>
                 <span>{draft.approvalStatus.replace("_", " ")}</span>

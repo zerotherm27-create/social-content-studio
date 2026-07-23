@@ -37,8 +37,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   outline: 2px solid var(--coral);
   outline-offset: 2px;
 }
-button:active { transform: translateY(1px); }
+button:active { transform: translateY(1px) scale(.99); }
+button:disabled { cursor: wait; }
 a { color: inherit; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
 
 .agentShell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100dvh; }
 .agentNav { position: sticky; top: 0; display: flex; flex-direction: column; height: 100dvh; padding: 18px 14px; color: #f7f6f1; background: var(--charcoal); }
@@ -82,15 +84,22 @@ a { color: inherit; }
 .topbarActions { display: flex; align-items: center; gap: 12px; }
 .agentState { border-radius: 7px; padding: 7px 9px; color: #425345; background: var(--success); font-size: 12px; font-weight: 700; }
 .agentState.paused { color: #78552a; background: var(--warning); }
-.primaryAction, .secondaryAction, .textAction { min-height: 44px; border-radius: var(--radius-control); padding: 0 16px; font-weight: 700; cursor: pointer; }
-.primaryAction { border: 1px solid var(--coral); color: #fff; background: var(--coral); }
+.primaryAction, .secondaryAction, .textAction { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; border-radius: var(--radius-control); padding: 0 16px; font-weight: 700; cursor: pointer; transition: transform .18s cubic-bezier(.16, 1, .3, 1), box-shadow .18s ease, border-color .18s ease, background .18s ease, color .18s ease; }
+.primaryAction { border: 1px solid var(--coral); color: #fff; background: var(--coral); box-shadow: 0 8px 20px rgba(217, 95, 71, .18); }
+.primaryAction:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(217, 95, 71, .22); }
 .primaryAction:hover { border-color: var(--coral-dark); background: var(--coral-dark); }
 .secondaryAction { border: 1px solid var(--line-strong); background: var(--paper); }
+.secondaryAction:not(:disabled):hover { transform: translateY(-1px); border-color: var(--quiet); }
 .textAction { min-height: 36px; border: 0; padding: 0; color: var(--coral-dark); background: transparent; }
+.isLoading { pointer-events: none; overflow: hidden; }
+.isLoading::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 0 34%, rgba(255,255,255,.24) 45%, transparent 58%); transform: translateX(-120%); animation: action-sheen 1.25s ease-in-out infinite; }
+.buttonSpinner { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 999px; animation: spin .7s linear infinite; }
 .fullWidth { width: 100%; margin-top: 9px; }
 
 .viewStack { display: grid; gap: 28px; max-width: 1440px; margin: 0 auto; padding-top: 36px; animation: view-enter .45s cubic-bezier(.16, 1, .3, 1) both; }
 @keyframes view-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(1turn); } }
+@keyframes action-sheen { to { transform: translateX(120%); } }
 .briefingHeader { max-width: 740px; padding: 16px 0 8px; }
 .briefingHeader h2, .viewIntro h2 { margin: 10px 0 12px; font-size: clamp(34px, 4vw, 56px); letter-spacing: -.055em; line-height: .98; }
 .briefingHeader > p:last-child, .viewIntro > p, .viewIntro > div > p { max-width: 620px; margin: 0; color: var(--muted); font-size: 17px; line-height: 1.55; }
@@ -160,7 +169,8 @@ a { color: inherit; }
 .ideaCardCopy h3 { margin: 9px 0 5px; font-size: 18px; letter-spacing: -.025em; }
 .ideaCardCopy p { margin: 0 0 14px; color: var(--muted); }
 .ideaCardCopy div { display: flex; gap: 8px; }
-.ideaCardCopy button, .brandDnaGrid button { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 11px; background: transparent; cursor: pointer; }
+.ideaCardCopy button, .brandDnaGrid button { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 11px; background: transparent; cursor: pointer; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+.ideaCardCopy button:not(:disabled):hover, .brandDnaGrid button:not(:disabled):hover { transform: translateY(-1px); border-color: var(--line-strong); background: #fff; }
 .ideaInspector { position: sticky; top: 116px; padding: 14px; }
 .ideaInspector > p:not(.contextLabel) { color: var(--muted); line-height: 1.5; }
 .manualBrief { display: grid; gap: 10px; margin: 18px 0; }
@@ -172,7 +182,7 @@ a { color: inherit; }
 .ideaInspector dl div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; border-top: 1px solid var(--line); padding: 11px 0; }
 .ideaInspector dt { color: var(--quiet); }
 .ideaInspector dd { margin: 0; font-weight: 600; }
-.artCardDownload { display: block; margin-top: 14px; color: var(--coral-dark); font-size: 13px; font-weight: 800; text-align: center; text-decoration: none; }
+.artCardDownload { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 38px; margin-top: 14px; border: 0; color: var(--coral-dark); background: transparent; font-size: 13px; font-weight: 800; text-align: center; text-decoration: none; cursor: pointer; }
 
 .createLayout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; }
 .panel { padding: 24px; }

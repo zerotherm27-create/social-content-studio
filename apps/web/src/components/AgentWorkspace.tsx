@@ -2,7 +2,7 @@
 
 import type { Brand, Campaign, ContentDraft, ContentIdea } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { type CSSProperties, type FormEvent, useMemo, useState } from "react";
+import { type ButtonHTMLAttributes, type CSSProperties, type FormEvent, useEffect, useMemo, useState } from "react";
 import { AgentComposer } from "@/components/AgentComposer";
 import { ConnectedAccounts } from "@/components/ConnectedAccounts";
 import { DraftBoard } from "@/components/DraftBoard";
@@ -415,10 +415,26 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
   const [ideaList, setIdeaList] = useState(initialIdeas);
   const [selected, setSelected] = useState<ContentIdeaBrief | null>(initialIdeas[0] ?? null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState("Reading Brand DNA");
+  const [pendingIdeaAction, setPendingIdeaAction] = useState<{ id: string; status: "SAVED" | "SKIPPED" | "BUILT" } | null>(null);
+  const [openingArtCardId, setOpeningArtCardId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const filters = useMemo(() => ["All", ...Array.from(new Set(ideaList.map((idea) => idea.purpose))).slice(0, 6)], [ideaList]);
   const filteredIdeas = activeFilter === "All" ? ideaList : ideaList.filter((idea) => idea.purpose === activeFilter);
+  const liveStatus = isGenerating ? `${generationStep}…` : pendingIdeaAction ? `${getIdeaActionLabel(pendingIdeaAction.status)}…` : openingArtCardId ? "Generating art card…" : "";
+
+  useEffect(() => {
+    if (!isGenerating) return;
+    const steps = ["Reading Brand DNA", "Choosing hook topics", "Writing post briefs", "Preparing image prompts"];
+    setGenerationStep(steps[0]);
+    let index = 0;
+    const timer = window.setInterval(() => {
+      index = (index + 1) % steps.length;
+      setGenerationStep(steps[index]);
+    }, 1400);
+    return () => window.clearInterval(timer);
+  }, [isGenerating]);
 
   async function generateIdeas() {
     setIsGenerating(true);
@@ -437,16 +453,27 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
   }
 
   async function updateStatus(idea: ContentIdeaBrief, status: "SAVED" | "SKIPPED" | "BUILT") {
-    const response = await fetch(`/api/ideas/${idea.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
-    });
-    if (!response.ok) return;
-    const { idea: updated } = await response.json();
-    setIdeaList((current) => current.map((item) => item.id === updated.id ? updated : item));
-    setSelected((current) => current?.id === updated.id ? updated : current);
-    if (status === "BUILT") onBuild(updated);
+    setPendingIdeaAction({ id: idea.id, status });
+    try {
+      const response = await fetch(`/api/ideas/${idea.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      if (!response.ok) return;
+      const { idea: updated } = await response.json();
+      setIdeaList((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setSelected((current) => current?.id === updated.id ? updated : current);
+      if (status === "BUILT") onBuild(updated);
+    } finally {
+      setPendingIdeaAction(null);
+    }
+  }
+
+  function openArtCard(idea: ContentIdeaBrief) {
+    setOpeningArtCardId(idea.id);
+    window.open(`/api/ideas/${idea.id}/artcard`, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => setOpeningArtCardId((current) => current === idea.id ? null : current), 2600);
   }
 
   return (
@@ -458,13 +485,16 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
           <div className="filterRow" aria-label="Idea filters">
             {filters.map((filter) => <button className={activeFilter === filter ? "active" : ""} type="button" key={filter} onClick={() => setActiveFilter(filter)}>{filter}</button>)}
           </div>
-          <button className="primaryAction" disabled={isGenerating} type="button" onClick={generateIdeas}>{isGenerating ? "Building ideas" : ideaList.length ? "Refresh ideas" : "Generate ideas"}</button>
+          <LoadingButton className="primaryAction" disabled={isGenerating} loading={isGenerating} type="button" onClick={generateIdeas}>
+            {isGenerating ? `${generationStep}…` : ideaList.length ? "Refresh ideas" : "Generate ideas"}
+          </LoadingButton>
         </div>
+        <p className="srOnly" aria-live="polite">{liveStatus}</p>
         {error ? <p className="inlineError" role="alert">{error}</p> : null}
       </section>
 
       {ideaList.length === 0 ? (
-        <section className="ideaEmpty"><div className="ideaEmptyVisual"><span>{brandName.slice(0, 2).toUpperCase()}</span><small>Brand DNA → ideas → art cards</small></div><div><p className="contextLabel">Ready when you are</p><h3>Build the first idea set</h3><p>Orbit will use the saved voice, audience, offers, and visual direction to propose six distinct concepts.</p><button className="primaryAction" disabled={isGenerating} type="button" onClick={generateIdeas}>{isGenerating ? "Reading Brand DNA" : "Generate ideas"}</button></div></section>
+        <section className="ideaEmpty"><div className="ideaEmptyVisual"><span>{brandName.slice(0, 2).toUpperCase()}</span><small>Brand DNA → ideas → art cards</small></div><div><p className="contextLabel">Ready when you are</p><h3>Build the first idea set</h3><p>Orbit will use the saved voice, audience, offers, and visual direction to propose six distinct concepts.</p><LoadingButton className="primaryAction" disabled={isGenerating} loading={isGenerating} type="button" onClick={generateIdeas}>{isGenerating ? `${generationStep}…` : "Generate ideas"}</LoadingButton></div></section>
       ) : <div className="ideasLayout">
         <section className="ideaGrid" aria-label="Generated content ideas">
           {filteredIdeas.map((idea) => (
@@ -477,8 +507,8 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
                 <h3>{idea.title}</h3>
                 <p>{idea.hook}</p>
                 <div>
-                  <button type="button" onClick={() => updateStatus(idea, "SAVED")}>{idea.status === "SAVED" ? "Saved" : "Save"}</button>
-                  <button type="button" onClick={() => updateStatus(idea, "SKIPPED")}>Skip</button>
+                  <LoadingButton loading={isIdeaActionPending(pendingIdeaAction, idea.id, "SAVED")} type="button" onClick={() => updateStatus(idea, "SAVED")}>{isIdeaActionPending(pendingIdeaAction, idea.id, "SAVED") ? "Saving…" : idea.status === "SAVED" ? "Saved" : "Save"}</LoadingButton>
+                  <LoadingButton loading={isIdeaActionPending(pendingIdeaAction, idea.id, "SKIPPED")} type="button" onClick={() => updateStatus(idea, "SKIPPED")}>{isIdeaActionPending(pendingIdeaAction, idea.id, "SKIPPED") ? "Skipping…" : "Skip"}</LoadingButton>
                   <button type="button" onClick={() => setSelected(idea)}>Inspect</button>
                 </div>
               </div>
@@ -506,9 +536,9 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
             <div><dt>Best format</dt><dd>{selected.format}</dd></div>
             <div><dt>Audience</dt><dd>{audience}</dd></div>
           </dl>
-          <button className="primaryAction fullWidth" type="button" onClick={() => updateStatus(selected, "BUILT")}>Build this idea</button>
-          <button className="secondaryAction fullWidth" type="button" onClick={() => updateStatus(selected, "SAVED")}>{selected.status === "SAVED" ? "Saved for later" : "Save for later"}</button>
-          <a className="artCardDownload" href={`/api/ideas/${selected.id}/artcard`} target="_blank" rel="noreferrer">Open full-size art card</a>
+          <LoadingButton className="primaryAction fullWidth" loading={isIdeaActionPending(pendingIdeaAction, selected.id, "BUILT")} type="button" onClick={() => updateStatus(selected, "BUILT")}>{isIdeaActionPending(pendingIdeaAction, selected.id, "BUILT") ? "Opening builder…" : "Build this idea"}</LoadingButton>
+          <LoadingButton className="secondaryAction fullWidth" loading={isIdeaActionPending(pendingIdeaAction, selected.id, "SAVED")} type="button" onClick={() => updateStatus(selected, "SAVED")}>{isIdeaActionPending(pendingIdeaAction, selected.id, "SAVED") ? "Saving…" : selected.status === "SAVED" ? "Saved for later" : "Save for later"}</LoadingButton>
+          <LoadingButton className="artCardDownload" loading={openingArtCardId === selected.id} type="button" onClick={() => openArtCard(selected)}>{openingArtCardId === selected.id ? "Generating art card…" : "Open full-size art card"}</LoadingButton>
         </aside> : null}
       </div>
       }
@@ -539,6 +569,15 @@ function BriefBlock({ label, value, preserveLines = false }: { label: string; va
       <span>{label}</span>
       <p className={preserveLines ? "preserveLines" : undefined}>{value}</p>
     </section>
+  );
+}
+
+function LoadingButton({ loading = false, children, className, disabled, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean }) {
+  return (
+    <button {...props} className={[className, loading ? "isLoading" : ""].filter(Boolean).join(" ")} disabled={disabled || loading}>
+      {loading ? <span className="buttonSpinner" aria-hidden="true" /> : null}
+      <span>{children}</span>
+    </button>
   );
 }
 
@@ -621,7 +660,7 @@ function CalendarView({ drafts }: { drafts: ContentDraft[] }) {
               <h3>{formatDayHeading(day)}</h3>
               {dayDrafts.length ? dayDrafts.map((draft) => (
                 <article className="calendarPost" key={draft.id}>
-                  <img src={`/api/drafts/${draft.id}/artcard`} alt="" />
+                  <img src={`/api/drafts/${draft.id}/artcard`} alt="" loading="lazy" decoding="async" />
                   <div><span>{formatPlatform(draft.platform)}</span><strong>{draft.artHeadline || draft.caption.slice(0, 48)}</strong><small>{formatTime(draft.scheduledAt as Date)}</small></div>
                 </article>
               )) : <span className="emptyDay">No posts scheduled</span>}
@@ -865,6 +904,16 @@ function getIdeaCta(idea: Pick<ContentIdeaBrief, "title" | "hook" | "imagePrompt
   if (text.includes("message") || text.includes("messenger")) return "Message Us";
   if (text.includes("book")) return "Book Now";
   return "Learn More";
+}
+
+function isIdeaActionPending(pending: { id: string; status: "SAVED" | "SKIPPED" | "BUILT" } | null, ideaId: string, status: "SAVED" | "SKIPPED" | "BUILT") {
+  return pending?.id === ideaId && pending.status === status;
+}
+
+function getIdeaActionLabel(status: "SAVED" | "SKIPPED" | "BUILT") {
+  if (status === "SAVED") return "Saving idea";
+  if (status === "SKIPPED") return "Skipping idea";
+  return "Opening builder";
 }
 
 function getIdeaLabel(idea: Pick<ContentIdeaBrief, "format" | "imagePrompt">) {
