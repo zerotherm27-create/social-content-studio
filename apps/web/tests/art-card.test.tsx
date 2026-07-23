@@ -48,6 +48,32 @@ describe("art cards", () => {
     expect(svg).not.toContain("rotate(");
   });
 
+  it("creates a clean manual-brief FAQ service card", () => {
+    const svg = createArtCardSvg({
+      brandName: "The Laundry Project",
+      eyebrow: "FAQ post",
+      headline: "What Can We Clean?",
+      subline: "Clothes, shoes, bedding, bags, linens, and more.",
+      visualDirection: "Clean FAQ-style art card with icons for clothes, shoes, bedding, bags, and linens.",
+      platform: "INSTAGRAM",
+      brandColor: "#299CB6",
+      accentColor: "#F9CA47",
+      websiteHost: "thelaundryproject.ph"
+    });
+
+    expect(svg).toContain("What Can We Clean?");
+    expect(svg).toContain("Clothes, shoes, bedding, bags,");
+    expect(svg).toContain("linens, and more.");
+    expect(svg).toContain("FAQ");
+    expect(svg).toContain("Clothes");
+    expect(svg).toContain("Shoes");
+    expect(svg).toContain("Bedding");
+    expect(svg).toContain("Bags");
+    expect(svg).toContain("Linens");
+    expect(svg).toContain("ASK US");
+    expect(svg).not.toContain("Pickup, care, and delivery in one simple flow.");
+  });
+
   it("creates a realistic campaign card when a generated photo is available", () => {
     const svg = createArtCardSvg({
       brandName: "Example Studio",

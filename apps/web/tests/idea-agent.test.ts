@@ -14,9 +14,11 @@ describe("generateContentIdeas", () => {
     const ideas = await generateContentIdeas(input, { apiKey: "", fetcher: vi.fn() });
     expect(ideas).toHaveLength(6);
     expect(ideas[0].title).toBeTruthy();
-    expect(ideas.some((idea) => idea.purpose === "Behind the scenes")).toBe(true);
+    expect(ideas.some((idea) => idea.format.includes("FAQ"))).toBe(true);
+    expect(ideas.some((idea) => idea.purpose === "Proof")).toBe(true);
     expect(ideas[0].imagePrompt).toContain("Campaign angle:");
-    expect(ideas[0].imagePrompt).toContain("do not create a generic template");
+    expect(ideas[0].imagePrompt).toContain("Manual brief style");
+    expect(ideas[0].imagePrompt).toContain("purposeful service icons or tiles");
   });
 
   it("parses structured ideas from the Responses API", async () => {
@@ -40,6 +42,7 @@ describe("generateContentIdeas", () => {
     const promptPayload = JSON.parse(body.input[0].content[0].text);
     expect(body.instructions).toContain("social media strategy agent");
     expect(promptPayload.socialIntelligence.qualityGate).toContain("Would a real social media manager post this for the brand?");
-    expect(promptPayload.task.join(" ")).toContain("premium brand-native art-card");
+    expect(promptPayload.task.join(" ")).toContain("manual social-media-manager style");
+    expect(promptPayload.task.join(" ")).toContain("clean UI/card layouts");
   });
 });

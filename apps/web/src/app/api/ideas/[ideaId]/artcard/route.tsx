@@ -20,16 +20,18 @@ export async function GET(request: Request, context: { params: Promise<{ ideaId:
   const assets = idea.brand.websiteUrl ? await readPublicBrandAssets(idea.brand.websiteUrl).catch(() => undefined) : undefined;
   const websiteHost = assets?.websiteHost ?? (idea.brand.websiteUrl ? new URL(idea.brand.websiteUrl).hostname.replace(/^www\./, "") : undefined);
   const visualDirection = `${idea.imagePrompt} ${idea.brand.visualStyle}`;
-  const generatedArtCard = await generatePremiumArtCardImage({
-    brandName: idea.brand.name,
-    headline: idea.title,
-    subline: idea.hook,
-    visualDirection,
-    platform,
-    brandColor: assets?.brandColor,
-    accentColor: assets?.accentColor,
-    websiteHost
-  }).catch(() => undefined);
+  const generatedArtCard = process.env.ORBIT_GENERATE_IDEA_IMAGES === "1"
+    ? await generatePremiumArtCardImage({
+      brandName: idea.brand.name,
+      headline: idea.title,
+      subline: idea.hook,
+      visualDirection,
+      platform,
+      brandColor: assets?.brandColor,
+      accentColor: assets?.accentColor,
+      websiteHost
+    }).catch(() => undefined)
+    : undefined;
 
   const decodedImage = generatedArtCard ? dataUrlToBuffer(generatedArtCard) : undefined;
   if (decodedImage) {

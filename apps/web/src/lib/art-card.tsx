@@ -217,6 +217,21 @@ export function createArtCardSvg(input: ArtCardInput) {
   const fallbackAdSublineStep = Math.round(fallbackAdSublineSize * 1.32);
   const fallbackAdSublineY = fallbackCopyY + 88 + estimateTextHeight(fallbackAdHeadlineSize, fallbackAdHeadlineStep, headlineLines.length) + 34;
 
+  if (isManualBriefCard(input)) {
+    return createManualBriefArtCardSvg({
+      input,
+      width,
+      height,
+      pad,
+      brandColor,
+      accentColor,
+      headerInk,
+      cta,
+      ctaInk,
+      host
+    });
+  }
+
   if (input.backgroundImage) {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(input.headline)}">
@@ -323,6 +338,187 @@ ${proofLines.map((line, index) => `    <tspan x="${pad + 92}" dy="${index === 0 
   <text x="${pad + 48 + ctaWidth / 2}" y="${ctaY + 45}" text-anchor="middle" fill="${ctaInk}" font-family="Arial, Helvetica, sans-serif" font-size="${cta.length > 12 ? 17 : 20}" font-weight="900" letter-spacing="2">${escapeXml(cta)}</text>
   <text x="${width - pad - 48}" y="${ctaY + 44}" text-anchor="end" fill="${brandColor}" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="1.5">${escapeXml(host.toUpperCase())}</text>
 </svg>`;
+}
+
+function isManualBriefCard(input: ArtCardInput) {
+  if (input.backgroundImage) return false;
+  const text = `${input.eyebrow} ${input.headline} ${input.subline} ${input.visualDirection} ${input.marketingGoal ?? ""} ${input.offerContext ?? ""}`.toLowerCase();
+  return /\b(faq|what can|service menu|service-list|services?|checklist|guide|education|educational|carousel|clean that|what clean|what we clean|shoes|bedding|bags|linens|comforter|curtains|uniforms)\b/.test(text);
+}
+
+function createManualBriefArtCardSvg(input: {
+  input: ArtCardInput;
+  width: number;
+  height: number;
+  pad: number;
+  brandColor: string;
+  accentColor: string;
+  headerInk: string;
+  cta: string;
+  ctaInk: string;
+  host: string;
+}) {
+  const { width, height, pad, brandColor, accentColor, headerInk, cta, ctaInk, host } = input;
+  const card = input.input;
+  const textInk = "#17231d";
+  const mutedInk = "#61706b";
+  const brief = getManualBriefCopy(card);
+  const headlineLines = limitLines(wrapText(brief.headline, width >= 1200 ? 24 : 18), 3, width >= 1200 ? 24 : 18);
+  const sublineLines = limitLines(wrapText(brief.subline, width >= 1200 ? 46 : 36), 3, width >= 1200 ? 46 : 36);
+  const items = getManualBriefItems(card).slice(0, width > height ? 5 : 6);
+  const contentX = pad + 54;
+  const contentWidth = width - pad * 2 - 108;
+  const headerHeight = width > height ? 100 : 112;
+  const iconGridTop = width > height ? pad + 265 : pad + 370;
+  const tileGap = 22;
+  const columns = width > height ? Math.min(5, items.length) : 2;
+  const tileWidth = Math.floor((contentWidth - tileGap * (columns - 1)) / columns);
+  const tileHeight = width > height ? 150 : 184;
+  const ctaWidth = Math.min(330, Math.max(194, cta.length * 13 + 104));
+  const ctaY = height - pad - 112;
+  const logoMarkup = card.logoImage
+    ? `<image href="${escapeXml(card.logoImage)}" x="${contentX}" y="${pad + 22}" width="250" height="62" preserveAspectRatio="xMinYMid meet"/>`
+    : `<text x="${contentX}" y="${pad + 64}" fill="${headerInk}" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="900">${escapeXml(card.brandName)}</text>`;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(brief.headline)}">
+  <defs>
+    <filter id="briefShadow" x="-16%" y="-16%" width="132%" height="132%">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#17231d" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="${width}" height="${height}" fill="#f7f5ee"/>
+  <rect x="${pad}" y="${pad}" width="${width - pad * 2}" height="${height - pad * 2}" rx="26" fill="#fffefa" filter="url(#briefShadow)"/>
+  <rect x="${pad}" y="${pad}" width="${width - pad * 2}" height="${headerHeight}" rx="26" fill="${brandColor}"/>
+  <rect x="${pad}" y="${pad + headerHeight - 24}" width="${width - pad * 2}" height="24" fill="${brandColor}"/>
+  ${logoMarkup}
+  <text x="${width - pad - 54}" y="${pad + 58}" text-anchor="end" fill="${headerInk}" fill-opacity="0.82" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="900" letter-spacing="1.8">${escapeXml(host.toUpperCase())}</text>
+  <rect x="${contentX}" y="${pad + headerHeight + 44}" width="${Math.min(260, contentWidth * 0.48)}" height="42" rx="8" fill="${accentColor}"/>
+  <text x="${contentX + 24}" y="${pad + headerHeight + 72}" fill="${ctaInk}" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="900" letter-spacing="2">${escapeXml(brief.label.toUpperCase())}</text>
+  <text x="${contentX}" y="${pad + headerHeight + 158}" fill="${brandColor}" font-family="Arial, Helvetica, sans-serif" font-size="${headlineLines.length > 2 ? 54 : 64}" font-weight="900" letter-spacing="-1.2">
+${headlineLines.map((line, index) => `    <tspan x="${contentX}" dy="${index === 0 ? 0 : 68}">${escapeXml(line)}</tspan>`).join("\n")}
+  </text>
+  <text x="${contentX}" y="${pad + headerHeight + 238}" fill="${textInk}" fill-opacity="0.86" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700">
+${sublineLines.map((line, index) => `    <tspan x="${contentX}" dy="${index === 0 ? 0 : 36}">${escapeXml(line)}</tspan>`).join("\n")}
+  </text>
+  ${items.map((item, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const x = contentX + column * (tileWidth + tileGap);
+    const y = iconGridTop + row * (tileHeight + tileGap);
+    return renderServiceTile({ x, y, width: tileWidth, height: tileHeight, label: item, brandColor, accentColor, textInk, mutedInk });
+  }).join("\n")}
+  <rect x="${contentX}" y="${ctaY}" width="${ctaWidth}" height="72" rx="12" fill="${accentColor}"/>
+  <text x="${contentX + ctaWidth / 2}" y="${ctaY + 46}" text-anchor="middle" fill="${ctaInk}" font-family="Arial, Helvetica, sans-serif" font-size="${cta.length > 13 ? 16 : 20}" font-weight="900" letter-spacing="1.5">${escapeXml(brief.cta.toUpperCase())}</text>
+  <text x="${width - pad - 54}" y="${ctaY + 44}" text-anchor="end" fill="${brandColor}" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" letter-spacing="1.5">${escapeXml(host.toUpperCase())}</text>
+</svg>`;
+}
+
+function getManualBriefCopy(input: ArtCardInput) {
+  const text = `${input.headline} ${input.subline} ${input.visualDirection}`.toLowerCase();
+  if (text.includes("what can") || text.includes("clean that") || text.includes("what we clean")) {
+    return {
+      label: "FAQ",
+      headline: "What Can We Clean?",
+      subline: "Clothes, shoes, bedding, bags, linens, and more.",
+      cta: "Ask Us"
+    };
+  }
+  if (text.includes("shoe")) {
+    return {
+      label: "FAQ",
+      headline: input.headline.length > 32 ? "Shoes Need Cleaning?" : input.headline,
+      subline: "Ask us what pairs we can handle.",
+      cta: "Message Us"
+    };
+  }
+  if (text.includes("bedding") || text.includes("comforter") || text.includes("linens")) {
+    return {
+      label: "Service Spotlight",
+      headline: input.headline.length > 34 ? "Bedding Needs Care Too" : input.headline,
+      subline: input.subline || "Comforters, sheets, linens, and curtains cleaned properly.",
+      cta: "Ask About Bedding"
+    };
+  }
+
+  return {
+    label: getMarketingLabel(input),
+    headline: input.headline,
+    subline: input.subline,
+    cta: getArtCardCta(input).replace("MESSAGE US TO BOOK", "MESSAGE US")
+  };
+}
+
+function getManualBriefItems(input: ArtCardInput) {
+  const text = `${input.headline} ${input.subline} ${input.visualDirection} ${input.offerContext ?? ""}`.toLowerCase();
+  const serviceItems = [
+    ["clothes", "Clothes"],
+    ["dry clean", "Dry cleaning"],
+    ["shoe", "Shoes"],
+    ["bedding", "Bedding"],
+    ["comforter", "Comforters"],
+    ["curtain", "Curtains"],
+    ["bag", "Bags"],
+    ["linen", "Linens"],
+    ["uniform", "Uniforms"],
+    ["pressing", "Pressing"]
+  ];
+  const found = serviceItems.filter(([needle]) => text.includes(needle)).map(([, label]) => label);
+  const defaults = ["Clothes", "Shoes", "Bedding", "Bags", "Linens", "More"];
+  return Array.from(new Set(found.length >= 4 ? found : defaults));
+}
+
+function renderServiceTile(input: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  brandColor: string;
+  accentColor: string;
+  textInk: string;
+  mutedInk: string;
+}) {
+  const { x, y, width, height, label, brandColor, accentColor, textInk, mutedInk } = input;
+  const iconX = x + width / 2;
+  const iconY = y + 62;
+  return `
+  <g>
+    <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="18" fill="#ffffff" stroke="${brandColor}" stroke-opacity="0.16" stroke-width="3"/>
+    <rect x="${x + 16}" y="${y + 16}" width="${width - 32}" height="${height - 32}" rx="14" fill="${brandColor}" fill-opacity="0.055"/>
+    ${renderServiceIcon({ label, x: iconX, y: iconY, brandColor, accentColor })}
+    <text x="${iconX}" y="${y + height - 36}" text-anchor="middle" fill="${textInk}" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="900">${escapeXml(label)}</text>
+    <text x="${iconX}" y="${y + height - 14}" text-anchor="middle" fill="${mutedInk}" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="800" letter-spacing="1.4">WE CAN HELP</text>
+  </g>`;
+}
+
+function renderServiceIcon(input: {
+  label: string;
+  x: number;
+  y: number;
+  brandColor: string;
+  accentColor: string;
+}) {
+  const label = input.label.toLowerCase();
+  const { x, y, brandColor, accentColor } = input;
+
+  if (label.includes("shoe")) {
+    return `<path d="M ${x - 48} ${y + 12} C ${x - 16} ${y + 34}, ${x + 40} ${y + 34}, ${x + 60} ${y + 14} L ${x + 48} ${y - 4} C ${x + 18} ${y + 8}, ${x - 8} ${y - 2}, ${x - 34} ${y - 30} L ${x - 50} ${y - 18} C ${x - 44} ${y - 4}, ${x - 48} ${y + 4}, ${x - 48} ${y + 12} Z" fill="${brandColor}"/><path d="M ${x - 26} ${y + 12} H ${x + 54}" stroke="${accentColor}" stroke-width="8" stroke-linecap="round"/>`;
+  }
+
+  if (label.includes("bag")) {
+    return `<rect x="${x - 42}" y="${y - 14}" width="84" height="76" rx="16" fill="${brandColor}"/><path d="M ${x - 22} ${y - 14} Q ${x} ${y - 52} ${x + 22} ${y - 14}" fill="none" stroke="${accentColor}" stroke-width="10" stroke-linecap="round"/><rect x="${x - 24}" y="${y + 12}" width="48" height="10" rx="5" fill="#fffefa" fill-opacity="0.72"/>`;
+  }
+
+  if (label.includes("bedding") || label.includes("comforter") || label.includes("linen") || label.includes("curtain")) {
+    return `<rect x="${x - 52}" y="${y - 34}" width="104" height="72" rx="16" fill="${brandColor}" fill-opacity="0.92"/><path d="M ${x - 52} ${y - 8} H ${x + 52}" stroke="#fffefa" stroke-opacity="0.78" stroke-width="10"/><path d="M ${x - 32} ${y - 20} H ${x + 32}" stroke="${accentColor}" stroke-width="9" stroke-linecap="round"/><path d="M ${x - 32} ${y + 16} H ${x + 32}" stroke="${accentColor}" stroke-width="9" stroke-linecap="round"/>`;
+  }
+
+  if (label.includes("uniform") || label.includes("clothes") || label.includes("dry")) {
+    return `<path d="M ${x - 42} ${y - 40} L ${x - 10} ${y - 22} L ${x} ${y - 6} L ${x + 10} ${y - 22} L ${x + 42} ${y - 40} L ${x + 58} ${y - 6} L ${x + 30} ${y + 8} V ${y + 60} H ${x - 30} V ${y + 8} L ${x - 58} ${y - 6} Z" fill="${brandColor}"/><path d="M ${x - 20} ${y + 18} H ${x + 20}" stroke="${accentColor}" stroke-width="9" stroke-linecap="round"/>`;
+  }
+
+  return `<rect x="${x - 44}" y="${y - 32}" width="88" height="82" rx="18" fill="${brandColor}"/><path d="M ${x - 22} ${y + 4} L ${x - 4} ${y + 24} L ${x + 28} ${y - 18}" fill="none" stroke="${accentColor}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
 
 function stableHash(value: string) {
