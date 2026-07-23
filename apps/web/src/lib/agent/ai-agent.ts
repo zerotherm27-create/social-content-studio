@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { MediaType, Platform, type Platform as PlatformValue } from "../domain";
 import { type GeneratedDraft, generateDrafts } from "./mock-agent";
+import { buildAgenticDraftRules } from "./art-card-creative-agents";
 import { buildSocialIntelligenceBrief } from "./social-intelligence";
 
 type GenerateDraftsInput = {
@@ -100,6 +101,7 @@ export function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
               platforms: input.platforms,
               socialIntelligence,
               rules: [
+                ...buildAgenticDraftRules(),
                 "Write one draft for each requested platform.",
                 "Use the supplied socialIntelligence object as your strategy brief. Do not ignore the platform playbook or quality gate.",
                 "For each platform, choose a different platform-native expression of the same campaign strategy. Do not paste the same caption across channels.",

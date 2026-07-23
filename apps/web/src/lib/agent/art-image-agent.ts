@@ -1,3 +1,5 @@
+import { generateAgenticArtCardPrompt } from "./art-card-creative-agents";
+
 export type ArtImageInput = {
   brandName: string;
   headline: string;
@@ -23,12 +25,21 @@ export async function generatePremiumArtCardImage(input: ArtImageInput, options:
   if (!apiKey) return undefined;
   const model = options.model ?? process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2";
   const outputFormat = "png";
+  const agenticPrompt = await generateAgenticArtCardPrompt(input, {
+    apiKey,
+    fetcher: options.fetcher
+  }).catch((error) => {
+    console.error("Art-card prompt agents fell back to deterministic prompt", {
+      message: error instanceof Error ? error.message : String(error)
+    });
+    return undefined;
+  });
 
   return generateImageDataUrl({
     apiKey,
     model,
     fetcher: options.fetcher,
-    prompt: buildPremiumArtCardPrompt(input),
+    prompt: agenticPrompt ?? buildPremiumArtCardPrompt(input),
     size: getPremiumArtCardSize(input.platform, model),
     quality: process.env.OPENAI_PREMIUM_IMAGE_QUALITY ?? process.env.OPENAI_IMAGE_QUALITY ?? "high",
     outputFormat,

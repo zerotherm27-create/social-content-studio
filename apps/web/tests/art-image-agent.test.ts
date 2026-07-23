@@ -5,6 +5,7 @@ import {
   generateArtCardPhoto,
   generatePremiumArtCardImage
 } from "@/lib/agent/art-image-agent";
+import { buildArtCardPromptAgentRequest } from "@/lib/agent/art-card-creative-agents";
 
 const input = {
   brandName: "The Laundry Project",
@@ -71,9 +72,38 @@ describe("art image generation", () => {
   });
 
   it("returns a full premium PNG art card from the Images API", async () => {
-    const fetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: [{ b64_json: "premium123" }] })
+    const fetcher = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes("/responses")) {
+        return {
+          ok: true,
+          json: async () => ({
+            output_text: JSON.stringify({
+              marketingPlaybook: {
+                audienceInsight: "Busy households need the booking action to feel immediate.",
+                hookTopic: "same-day pickup clarity",
+                postJob: "remove booking friction",
+                proofToShow: "pickup bag at the door",
+                conversionAction: "book pickup"
+              },
+              contentScript: {
+                headline: "Book in Minutes via Messenger",
+                subline: "Need laundry picked up today? Send us a message and book in minutes.",
+                cta: "Book Pickup",
+                hierarchy: "Brand top, headline left, hero pickup scene right, CTA bottom.",
+                avoid: ["fake discounts", "crowded collage", "text over hands"]
+              },
+              imageBrief: {
+                prompt: "Refined premium art-card prompt from the internal Orbit agents: build a clean 4:5 paid-social laundry pickup ad with brand lockup, headline zone, proof cue, CTA, and a realistic door pickup hero scene."
+              }
+            })
+          })
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => ({ data: [{ b64_json: "premium123" }] })
+      };
     });
 
     const image = await generatePremiumArtCardImage(input, {
@@ -83,7 +113,7 @@ describe("art image generation", () => {
     });
 
     expect(image).toBe("data:image/png;base64,premium123");
-    const body = JSON.parse(fetcher.mock.calls[0][1].body as string);
+    const body = JSON.parse(fetcher.mock.calls[1][1].body as string);
     expect(body).toMatchObject({
       model: "gpt-image-2",
       size: "1088x1360",
@@ -92,7 +122,18 @@ describe("art image generation", () => {
       background: "opaque",
       n: 1
     });
-    expect(body.prompt).toContain("finished premium social-media art card");
+    expect(body.prompt).toContain("Refined premium art-card prompt from the internal Orbit agents");
+  });
+
+  it("builds a three-agent prompt-planning request before image generation", () => {
+    const request = buildArtCardPromptAgentRequest(input, "gpt-5.4-mini");
+    const payload = JSON.parse(request.input[0].content[0].text);
+
+    expect(request.instructions).toContain("Agent 1, Marketing Strategist");
+    expect(request.instructions).toContain("Agent 2, Social Copy and Prompt Writer");
+    expect(request.instructions).toContain("Agent 3, Image Director");
+    expect(payload.brandDNA.brandName).toBe("The Laundry Project");
+    expect(payload.handoffRules.join(" ")).toContain("complete designed ad image");
   });
 
   it("uses a landscape image generation size for Google Business posts", async () => {
