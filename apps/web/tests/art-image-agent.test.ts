@@ -25,6 +25,8 @@ describe("art image generation", () => {
     expect(prompt).toContain("finished premium social-media art card");
     expect(prompt).toContain("not a template, not an SVG");
     expect(prompt).toContain("Design the full art card yourself");
+    expect(prompt).toContain("FAQ, education, service-list");
+    expect(prompt).toContain("purposeful icons or service tiles");
     expect(prompt).toContain("Avoid overlap");
     expect(prompt).toContain("Do not add generic stamps");
     expect(prompt).toContain("Main headline text, exact spelling: Book in Minutes via Messenger.");
@@ -81,14 +83,19 @@ describe("art image generation", () => {
               marketingPlaybook: {
                 audienceInsight: "Busy households need the booking action to feel immediate.",
                 hookTopic: "same-day pickup clarity",
+                contentPillar: "FAQ",
+                format: "FAQ post",
                 postJob: "remove booking friction",
                 proofToShow: "pickup bag at the door",
-                conversionAction: "book pickup"
+                conversionAction: "book pickup",
+                seoKeywords: ["laundry service Metro Manila", "dry cleaning Metro Manila"]
               },
               contentScript: {
+                hook: "Can we clean that? Most likely, yes.",
                 headline: "Book in Minutes via Messenger",
                 subline: "Need laundry picked up today? Send us a message and book in minutes.",
                 cta: "Book Pickup",
+                caption: "Not sure if your item can be cleaned? Ask us.",
                 hierarchy: "Brand top, headline left, hero pickup scene right, CTA bottom.",
                 avoid: ["fake discounts", "crowded collage", "text over hands"]
               },
@@ -133,7 +140,9 @@ describe("art image generation", () => {
     expect(request.instructions).toContain("Agent 2, Social Copy and Prompt Writer");
     expect(request.instructions).toContain("Agent 3, Image Director");
     expect(payload.brandDNA.brandName).toBe("The Laundry Project");
-    expect(payload.handoffRules.join(" ")).toContain("complete designed ad image");
+    expect(payload.preferredManualBriefShape.format).toBe("FAQ post");
+    expect(payload.preferredManualBriefShape.imagePromptStyle).toContain("Clean FAQ-style art card");
+    expect(payload.handoffRules.join(" ")).toContain("clean information-card layout");
   });
 
   it("uses a landscape image generation size for Google Business posts", async () => {

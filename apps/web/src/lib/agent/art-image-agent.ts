@@ -138,8 +138,9 @@ export function buildPremiumArtCardPrompt(input: ArtImageInput) {
     `Format: ${getPlatformFormatDirection(input.platform)}. The composition must be ready to post as a complete marketing graphic.`,
     "Act like a senior brand designer and paid-social creative director. Use editorial spacing, visual hierarchy, clean typography, generous safe zones, and a modern commercial layout.",
     "The image must look like a real brand post designed for Instagram/Facebook/Threads, not like a simple generated flyer.",
-    "Use a realistic photographic hero scene integrated into the layout. The photo should support the offer and feel professionally shot, with natural light, tactile detail, believable scale, and no AI artifacts.",
-    "Design the full art card yourself: background, photo crop, brand lockup area, headline hierarchy, supporting line, proof or benefit elements, CTA treatment, and tasteful graphic accents.",
+    "Choose the correct visual format for the marketing job. A FAQ, education, service-list, comparison, or carousel-cover post may use a clean UI/card layout with purposeful icons or service tiles. A conversion or proof post may use a realistic photographic hero scene.",
+    "Design the full art card yourself: background, logo/brand lockup area, headline hierarchy, supporting line, proof/service elements, CTA treatment, and tasteful graphic accents.",
+    "When icons are useful, make them simple, premium, and category-specific, such as clothes, shoes, bedding, bags, linens, tools, checklist items, or service steps. Do not use random decorative icons.",
     "Avoid overlap. No text may cover faces, products, garments, food, property features, hands, important service details, or the CTA.",
     "Avoid clutter. Use one dominant hero visual, one headline, one short supporting line, one CTA, and at most three proof/benefit cues.",
     "Do not add generic stamps such as EDUCATION, PROMOTION, MARKETING CARD, READY TO POST, or SAMPLE.",
@@ -155,7 +156,7 @@ export function buildPremiumArtCardPrompt(input: ArtImageInput) {
     input.campaignGoal ? `Marketing objective: ${input.campaignGoal}.` : "",
     brandColorDirection,
     `Brand/posting style and campaign art direction to apply: ${input.visualDirection}.`,
-    "Quality bar: premium Canva/agency-level paid social creative with intentional composition, not a generic stock-photo overlay."
+    "Quality bar: the kind of practical, clean post a strong social media manager would manually brief: platform, format, goal, hook, art-card text, caption intent, CTA, SEO/search context when relevant, and a precise image prompt."
   ].filter(Boolean).join(" ");
 }
 

@@ -13,14 +13,19 @@ const artCardPromptSchema = z.object({
   marketingPlaybook: z.object({
     audienceInsight: z.string().min(2),
     hookTopic: z.string().min(2),
+    contentPillar: z.string().min(2),
+    format: z.string().min(2),
     postJob: z.string().min(2),
     proofToShow: z.string().min(2),
-    conversionAction: z.string().min(2)
+    conversionAction: z.string().min(2),
+    seoKeywords: z.array(z.string().min(2)).min(2).max(8)
   }),
   contentScript: z.object({
+    hook: z.string().min(2).max(120),
     headline: z.string().min(1).max(72),
     subline: z.string().min(1).max(140),
     cta: z.string().min(1).max(32),
+    caption: z.string().min(2),
     hierarchy: z.string().min(2),
     avoid: z.array(z.string().min(2)).min(3).max(8)
   }),
@@ -94,9 +99,9 @@ export function buildArtCardPromptAgentRequest(input: ArtImageInput, model: stri
     model,
     instructions: [
       "You are Orbit's internal creative-agent room. Three specialist agents must collaborate before image generation.",
-      "Agent 1, Marketing Strategist: choose the hook topic, customer tension, post job, proof, and conversion playbook from Brand DNA.",
-      "Agent 2, Social Copy and Prompt Writer: turn the strategy into exact poster copy, hierarchy, and art-direction constraints.",
-      "Agent 3, Image Director: write the final image-generation prompt for a finished premium art card.",
+      "Agent 1, Marketing Strategist: choose the content pillar, hook topic, platform format, customer friction, SEO keywords, post job, proof, and conversion playbook from Brand DNA.",
+      "Agent 2, Social Copy and Prompt Writer: turn the strategy into a manual content brief: hook, art-card headline, art-card subtext, caption, CTA, and hierarchy.",
+      "Agent 3, Image Director: write the final image-generation prompt for the chosen format, whether it is a FAQ icon card, service menu, carousel cover, proof card, checklist, or photo-led ad.",
       "Return only schema-valid JSON. The final prompt must be brand-native, specific, visually composed, and safe for direct image generation."
     ].join(" "),
     input: [{
@@ -119,6 +124,18 @@ export function buildArtCardPromptAgentRequest(input: ArtImageInput, model: stri
             subline: input.subline,
             cta: getAgentCta(input)
           },
+          preferredManualBriefShape: {
+            title: "What We Clean FAQ",
+            platforms: ["Google", "Facebook", "Instagram carousel"],
+            format: "FAQ post",
+            goal: "Reduce friction",
+            hook: "Can we clean that? Most likely, yes.",
+            artCardText: ["What Can We Clean?", "Clothes, shoes, bedding, bags, linens, and more.", "Ask Us"],
+            caption: "Not sure if your item can be cleaned? Ask us. Then list exact services from Brand DNA.",
+            cta: "Send us a message and ask about your item.",
+            seoKeywords: ["laundry service Metro Manila", "dry cleaning Metro Manila", "shoe cleaning Metro Manila", "comforter cleaning Metro Manila"],
+            imagePromptStyle: "Clean FAQ-style art card, service/category icons, brand colors, logo, modern UI card layout."
+          },
           platform,
           inferredStrategy: {
             angle,
@@ -129,10 +146,12 @@ export function buildArtCardPromptAgentRequest(input: ArtImageInput, model: stri
           handoffRules: [
             "Do not invent unsupported prices, awards, dates, review counts, guarantees, discounts, locations, certifications, or claims.",
             "Use the supplied headline, subline, CTA, brand name, and source domain as the only readable text in the art card.",
-            "The final prompt must describe one complete designed ad image: layout grid, hero scene, typography treatment, proof cue, CTA treatment, color use, and safe zones.",
+            "If the topic is FAQ, education, service coverage, pricing explanation, comparison, checklist, or carousel cover, prefer a clean information-card layout over a photorealistic hero scene.",
+            "For FAQ/service-list posts, use simple category icons, labeled UI tiles, or product/service illustrations when they clarify the answer. Icons are allowed when purposeful.",
+            "The final prompt must describe one complete designed social asset: layout grid, visual system, headline area, subtext area, proof/service cue, CTA treatment, color use, and safe zones.",
             "Make the image do a marketing job, not just look pretty.",
-            "Choose a real customer moment or product/service proof scene aligned to the Brand DNA.",
-            "Avoid generic flyer layout, collage, fake UI, floating icons, text over the hero subject, tiny unreadable print, and random badge stamps.",
+            "Choose the format a real social media manager would manually make for this post, not always a photo ad.",
+            "Avoid generic flyer layout, collage, fake app UI, random decorative icons, text over the hero subject, tiny unreadable print, and random badge stamps.",
             "Keep the prompt concise enough for image generation while preserving the creative direction."
           ]
         })
@@ -151,23 +170,33 @@ export function buildArtCardPromptAgentRequest(input: ArtImageInput, model: stri
             marketingPlaybook: {
               type: "object",
               additionalProperties: false,
-              required: ["audienceInsight", "hookTopic", "postJob", "proofToShow", "conversionAction"],
+              required: ["audienceInsight", "hookTopic", "contentPillar", "format", "postJob", "proofToShow", "conversionAction", "seoKeywords"],
               properties: {
                 audienceInsight: { type: "string" },
                 hookTopic: { type: "string" },
+                contentPillar: { type: "string" },
+                format: { type: "string" },
                 postJob: { type: "string" },
                 proofToShow: { type: "string" },
-                conversionAction: { type: "string" }
+                conversionAction: { type: "string" },
+                seoKeywords: {
+                  type: "array",
+                  minItems: 2,
+                  maxItems: 8,
+                  items: { type: "string" }
+                }
               }
             },
             contentScript: {
               type: "object",
               additionalProperties: false,
-              required: ["headline", "subline", "cta", "hierarchy", "avoid"],
+              required: ["hook", "headline", "subline", "cta", "caption", "hierarchy", "avoid"],
               properties: {
+                hook: { type: "string", maxLength: 120 },
                 headline: { type: "string", maxLength: 72 },
                 subline: { type: "string", maxLength: 140 },
                 cta: { type: "string", maxLength: 32 },
+                caption: { type: "string" },
                 hierarchy: { type: "string" },
                 avoid: {
                   type: "array",
@@ -200,10 +229,11 @@ function normalizePlatform(platform?: string): PlatformValue {
 export function buildAgenticDraftRules() {
   return [
     "Use a three-agent handoff for every draft.",
-    "Agent 1 - Marketing Strategist: pick the hook topic, content job, audience tension, proof cue, funnel stage, platform playbook, and safest conversion action from Brand DNA.",
-    "Agent 2 - Social Content Writer: write the platform-native caption, art headline, art subline, and CTA logic from Agent 1's playbook. Keep the poster copy short and concrete.",
-    "Agent 3 - Art Card Image Director: write visualDirection as the image-generation brief that will be handed to the art-card generator. It must synthesize Agents 1 and 2 into one complete premium ad composition.",
-    "The visualDirection must include layout grid, hero subject, customer/service moment, text zones, proof/benefit cue, CTA treatment, color usage, and safe-zone instructions.",
+    "Agent 1 - Marketing Strategist: produce a manual social-media-manager brief: platform, format, goal, hook topic, content pillar, audience friction, proof cue, SEO/search keywords where useful, and safest conversion action from Brand DNA.",
+    "Agent 2 - Social Content Writer: write the platform-native caption, art-card headline, art-card subline, and CTA logic from Agent 1's playbook. Keep the poster copy as simple as the user's manual examples: headline, one helpful subtext line, one CTA.",
+    "Agent 3 - Art Card Image Director: choose the right visual format for the job, such as FAQ icon card, service menu, checklist, carousel cover, proof card, product/service hero, or photo-led ad. Do not force every post into a photographic hero layout.",
+    "The visualDirection must include the chosen format, layout grid, visual elements or icons, text zones, proof/benefit cue, CTA treatment, brand color usage, logo placement, and safe-zone instructions.",
+    "For FAQ, education, service coverage, comparison, or friction-reduction posts, prefer a clean UI/card layout with purposeful category icons or tiles when useful.",
     "Do not let Agent 3 invent new facts. It may visualize only the Brand DNA, offer/context, platform playbook, and Agent 2 copy."
   ];
 }
