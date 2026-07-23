@@ -99,7 +99,7 @@ async function generateImageDataUrl(input: {
         Authorization: `Bearer ${input.apiKey}`,
         "Content-Type": "application/json"
       },
-      signal: AbortSignal.timeout(55_000),
+      signal: AbortSignal.timeout(110_000),
       body: JSON.stringify(body)
     });
   } catch (error) {

@@ -1,6 +1,5 @@
 import type { Brand, Campaign, ContentDraft } from "@prisma/client";
 import { generatePremiumArtCardImage } from "@/lib/agent/art-image-agent";
-import { createArtCardSvg } from "@/lib/art-card";
 import { db } from "@/lib/db";
 import { readPublicBrandAssets } from "@/lib/safe-website";
 
@@ -9,9 +8,7 @@ type DraftWithBrandAndCampaign = ContentDraft & {
   campaign: Campaign;
 };
 
-type DraftArtCardAsset =
-  | { kind: "image"; body: Buffer; contentType: string; generatedImage: true }
-  | { kind: "svg"; svg: string; generatedImage: false };
+type DraftArtCardAsset = { kind: "image"; body: Buffer; contentType: string; generatedImage: true };
 
 export async function loadDraftArtCardAsset(draftId: string): Promise<DraftArtCardAsset | undefined> {
   const draft = await db.contentDraft.findUnique({
@@ -44,7 +41,13 @@ export async function createDraftArtCardAsset(draft: DraftWithBrandAndCampaign):
     audience: draft.brand.audience,
     offerContext: draft.campaign.source || draft.brand.offers,
     campaignGoal: draft.campaign.goal
-  }).catch(() => undefined);
+  }).catch((error) => {
+    console.error("Draft art-card image generation failed", {
+      draftId: draft.id,
+      message: error instanceof Error ? error.message : String(error)
+    });
+    return undefined;
+  });
 
   if (generatedArtCard) {
     const decoded = dataUrlToBuffer(generatedArtCard);
@@ -58,35 +61,7 @@ export async function createDraftArtCardAsset(draft: DraftWithBrandAndCampaign):
     }
   }
 
-  return {
-    kind: "svg",
-    svg: createArtCardSvg({
-      brandName: draft.brand.name,
-      eyebrow: draft.platform.replaceAll("_", " "),
-      headline,
-      subline,
-      visualDirection,
-      platform: draft.platform,
-      logoImage: assets?.logoImage,
-      brandColor: assets?.brandColor,
-      accentColor: assets?.accentColor,
-      websiteHost,
-      marketingGoal: draft.campaign.goal,
-      offerContext: draft.campaign.source || draft.brand.offers
-    }),
-    generatedImage: false
-  };
-}
-
-export async function loadDraftArtCardSvg(draftId: string) {
-  const result = await loadDraftArtCardAsset(draftId);
-  if (!result) return undefined;
-  if (result.kind === "svg") return { svg: result.svg, generatedPhoto: undefined };
-
-  return {
-    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350"><image href="data:${result.contentType};base64,${result.body.toString("base64")}" x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/></svg>`,
-    generatedPhoto: `data:${result.contentType};base64,${result.body.toString("base64")}`
-  };
+  throw new Error("Real art-card image generation failed. Draft art cards require a generated raster image.");
 }
 
 export function dataUrlToBuffer(dataUrl: string) {

@@ -1,4 +1,3 @@
-import { createArtCardSvg } from "@/lib/art-card";
 import { generatePremiumArtCardImage } from "@/lib/agent/art-image-agent";
 import { db } from "@/lib/db";
 import { dataUrlToBuffer } from "@/lib/draft-art-card";
@@ -6,7 +5,7 @@ import { readPublicBrandAssets } from "@/lib/safe-website";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function GET(request: Request, context: { params: Promise<{ ideaId: string }> }) {
   const { ideaId } = await context.params;
@@ -20,18 +19,24 @@ export async function GET(request: Request, context: { params: Promise<{ ideaId:
   const assets = idea.brand.websiteUrl ? await readPublicBrandAssets(idea.brand.websiteUrl).catch(() => undefined) : undefined;
   const websiteHost = assets?.websiteHost ?? (idea.brand.websiteUrl ? new URL(idea.brand.websiteUrl).hostname.replace(/^www\./, "") : undefined);
   const visualDirection = `${idea.imagePrompt} ${idea.brand.visualStyle}`;
-  const generatedArtCard = process.env.ORBIT_GENERATE_IDEA_IMAGES === "1"
-    ? await generatePremiumArtCardImage({
-      brandName: idea.brand.name,
-      headline: idea.title,
-      subline: idea.hook,
-      visualDirection,
-      platform,
-      brandColor: assets?.brandColor,
-      accentColor: assets?.accentColor,
-      websiteHost
-    }).catch(() => undefined)
-    : undefined;
+  const generatedArtCard = await generatePremiumArtCardImage({
+    brandName: idea.brand.name,
+    headline: idea.title,
+    subline: idea.hook,
+    visualDirection,
+    platform,
+    brandColor: assets?.brandColor,
+    accentColor: assets?.accentColor,
+    websiteHost,
+    audience: idea.brand.audience,
+    offerContext: idea.brand.offers
+  }).catch((error) => {
+    console.error("Idea art-card image generation failed", {
+      ideaId,
+      message: error instanceof Error ? error.message : String(error)
+    });
+    return undefined;
+  });
 
   const decodedImage = generatedArtCard ? dataUrlToBuffer(generatedArtCard) : undefined;
   if (decodedImage) {
@@ -43,24 +48,13 @@ export async function GET(request: Request, context: { params: Promise<{ ideaId:
     });
   }
 
-  return new Response(
-    createArtCardSvg({
-      brandName: idea.brand.name,
-      eyebrow: idea.purpose,
-      headline: idea.title,
-      subline: idea.hook,
-      visualDirection,
-      platform,
-      logoImage: assets?.logoImage,
-      brandColor: assets?.brandColor,
-      accentColor: assets?.accentColor,
-      websiteHost
-    }),
+  return Response.json(
     {
-      headers: {
-        "Content-Type": "image/svg+xml; charset=utf-8",
-        "Cache-Control": "no-store"
-      }
+      error: "Real image generation failed. Idea art cards require a generated raster image."
+    },
+    {
+      status: 502,
+      headers: { "Cache-Control": "no-store" }
     }
   );
 }
