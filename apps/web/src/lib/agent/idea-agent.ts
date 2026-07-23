@@ -10,10 +10,16 @@ export type IdeaGenerationInput = {
 };
 
 export type GeneratedIdea = {
+  platform: string;
   title: string;
   hook: string;
   purpose: string;
   format: string;
+  goal: string;
+  artCardText: string;
+  caption: string;
+  cta: string;
+  seoKeywords: string;
   reason: string;
   imagePrompt: string;
 };
@@ -25,10 +31,16 @@ type IdeaAgentOptions = {
 };
 
 const ideaSchema = z.object({
+  platform: z.string().min(2),
   title: z.string().min(2),
   hook: z.string().min(2),
   purpose: z.string().min(2),
   format: z.string().min(2),
+  goal: z.string().min(2),
+  artCardText: z.string().min(2),
+  caption: z.string().min(2),
+  cta: z.string().min(2),
+  seoKeywords: z.string().min(2),
   reason: z.string().min(2),
   imagePrompt: z.string().min(2)
 });
@@ -54,10 +66,12 @@ export async function generateContentIdeas(input: IdeaGenerationInput, options: 
             brand: input,
             socialIntelligence,
             task: [
-              "Create six distinct content ideas in the user's manual social-media-manager style: platform, format, goal, hook, art-card text, caption intent, CTA, SEO/search keywords when useful, and image prompt.",
+              "Create six distinct complete content briefs in the user's manual social-media-manager style. Every idea must include Platform, Format, Goal, Hook, Art Card Text, Caption, CTA, SEO Keywords, and Image Prompt.",
+              "Treat the content brief as the product. The visual preview comes after the marketing/copy brief is strong.",
               "Prioritize practical content pillars a real local business would post: FAQ, service menu, pickup flow, specialty item spotlight, before/after proof, care tip, pricing/process explainer, local search intent, and message-to-book friction reduction.",
               "Each idea title should be the art-card headline or close to it, not a vague strategy phrase.",
               "Each hook should be short enough to become the art-card subtext or caption opener.",
+              "Art Card Text must be written as 2-4 short lines: headline, subtext, and CTA. Caption must be ready to post, not just an intent. SEO Keywords must be a comma-separated list, or 'N/A' only when genuinely not useful.",
               "The imagePrompt must describe a finished social asset. For FAQ/service/education posts, prefer clean UI/card layouts with purposeful icons, tiles, checklist rows, logo, brand colors, headline, subtext, and CTA. Use photography only when it genuinely helps proof or conversion.",
               "Use concrete service terms from Brand DNA. For laundry brands, examples include regular laundry, dry cleaning, shoes, bedding, comforters, curtains, bags, pressing, uniforms, linens, pickup, delivery, and Messenger booking.",
               "Avoid unverifiable claims, generic stamps, and template language."
@@ -82,12 +96,18 @@ export async function generateContentIdeas(input: IdeaGenerationInput, options: 
                 items: {
                   type: "object",
                   additionalProperties: false,
-                  required: ["title", "hook", "purpose", "format", "reason", "imagePrompt"],
+                  required: ["platform", "title", "hook", "purpose", "format", "goal", "artCardText", "caption", "cta", "seoKeywords", "reason", "imagePrompt"],
                   properties: {
+                    platform: { type: "string" },
                     title: { type: "string" },
                     hook: { type: "string" },
                     purpose: { type: "string" },
                     format: { type: "string" },
+                    goal: { type: "string" },
+                    artCardText: { type: "string" },
+                    caption: { type: "string" },
+                    cta: { type: "string" },
+                    seoKeywords: { type: "string" },
                     reason: { type: "string" },
                     imagePrompt: { type: "string" }
                   }
@@ -126,11 +146,23 @@ export function generateMockIdeas(input: IdeaGenerationInput): GeneratedIdea[] {
     ["Behind The Service", "A look at the care behind the result.", "Proof", "Process carousel cover", "Process proof builds trust without exaggerated claims."]
   ];
 
-  return ideas.map(([title, hook, purpose, format, reason]) => ({
+  return ideas.map(([title, hook, purpose, format, reason]) => {
+    const platform = format.includes("Google") ? "Google, Facebook, Instagram carousel" : "Facebook, Instagram, Google Business Profile";
+    const cta = getIdeaCta(title, hook);
+    const artCardText = `${title}\n${hook}\n${cta}`;
+    const caption = buildMockCaption({ title, hook, reason, cta, isLaundry, offers: input.offers });
+    const seoKeywords = buildSeoKeywords(input, isLaundry);
+    return ({
+    platform,
     title,
     hook,
     purpose,
     format,
+    goal: reason,
+    artCardText,
+    caption,
+    cta,
+    seoKeywords,
     reason,
     imagePrompt: `${buildStrategicVisualDirection({
       ...input,
@@ -139,8 +171,9 @@ export function generateMockIdeas(input: IdeaGenerationInput): GeneratedIdea[] {
       source: reason,
       platform: format.includes("Google") ? "GOOGLE_BUSINESS" : format.includes("Threads") ? "THREADS" : "INSTAGRAM",
       base: `${input.visualStyle || "premium brand-native social creative"}. ${title}. Campaign angle: ${angle}.`
-    })} Manual brief style: Platform ${format.includes("Google") ? "Google Business, Facebook, Instagram carousel" : "Facebook, Instagram carousel, Google Business"}; Format: ${format}; Goal: ${purpose}; Hook: ${hook}; Art Card Text: ${title} / ${hook} / ${getIdeaCta(title, hook)}; CTA: ${getIdeaCta(title, hook)}; Image Prompt: clean readable social card with logo, brand colors, purposeful service icons or tiles, large headline, one subtext line, and clear CTA.`
-  }));
+    })} Manual brief style: Platform ${platform}; Format: ${format}; Goal: ${reason}; Hook: ${hook}; Art Card Text: ${artCardText.replace(/\n/g, " / ")}; Caption: ${caption}; CTA: ${cta}; SEO Keywords: ${seoKeywords}; Image Prompt: clean readable social card with logo, brand colors, purposeful service icons or tiles, large headline, one subtext line, and clear CTA.`
+  });
+  });
 }
 
 function getIdeaCta(title: string, hook: string) {
@@ -149,6 +182,19 @@ function getIdeaCta(title: string, hook: string) {
   if (text.includes("pickup") || text.includes("book")) return "Book Pickup";
   if (text.includes("bedding") || text.includes("comforter")) return "Ask About Bedding";
   return "Message Us";
+}
+
+function buildMockCaption(input: { title: string; hook: string; reason: string; cta: string; isLaundry: boolean; offers: string }) {
+  if (input.isLaundry) {
+    return `${input.hook}\n\nNot sure if your item fits the service? Send us a message.\n\nThe Laundry Project can help with regular laundry, dry cleaning, shoes, bedding, comforters, curtains, bags, pressing, uniforms, linens, and specialty items.\n\n${input.cta}.`;
+  }
+  return `${input.hook}\n\n${input.reason}\n\nAsk us about ${input.offers || "the service"} and the easiest next step.\n\n${input.cta}.`;
+}
+
+function buildSeoKeywords(input: IdeaGenerationInput, isLaundry: boolean) {
+  if (isLaundry) return "laundry service Metro Manila, dry cleaning Metro Manila, shoe cleaning Metro Manila, comforter cleaning Metro Manila";
+  const offer = input.offers.split(",")[0]?.trim() || "service";
+  return `${offer}, ${input.brandName}, local service, booking`;
 }
 
 function extractOutputText(payload: unknown) {

@@ -11,8 +11,17 @@ import { Platform } from "@/lib/domain";
 type BrandWorkspace = Brand & {
   drafts: ContentDraft[];
   socialAccounts: PublicSocialAccount[];
-  ideas: ContentIdea[];
+  ideas: ContentIdeaBrief[];
   campaigns: Campaign[];
+};
+
+type ContentIdeaBrief = ContentIdea & {
+  platform?: string;
+  goal?: string;
+  artCardText?: string;
+  caption?: string;
+  cta?: string;
+  seoKeywords?: string;
 };
 
 export type PublicSocialAccount = {
@@ -153,8 +162,18 @@ export function AgentWorkspace({ brand, brands }: { brand: BrandWorkspace; brand
             onBuild={(idea) => {
               setCampaignBrief({
                 title: idea.title,
-                goal: idea.purpose,
-                source: `${idea.hook}\n\n${idea.reason}`,
+                goal: idea.goal || idea.purpose,
+                source: [
+                  `Platform: ${idea.platform || inferIdeaPlatform(idea.format)}`,
+                  `Format: ${idea.format}`,
+                  `Goal: ${idea.goal || idea.purpose}`,
+                  `Hook: ${idea.hook}`,
+                  `Art Card Text:\n${idea.artCardText || `${idea.title}\n${idea.hook}\n${idea.cta || getIdeaCta(idea)}`}`,
+                  `Caption:\n${idea.caption || buildFallbackIdeaCaption(idea)}`,
+                  `CTA: ${idea.cta || getIdeaCta(idea)}`,
+                  `SEO Keywords: ${idea.seoKeywords || inferSeoKeywords(idea, brand.audience)}`,
+                  `Reason: ${idea.reason}`
+                ].join("\n\n"),
                 creativeDirection: idea.imagePrompt
               });
               setView("create");
@@ -392,9 +411,9 @@ function TodayView({
   );
 }
 
-function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { brandId: string; brandName: string; audience: string; initialIdeas: ContentIdea[]; onBuild: (idea: ContentIdea) => void }) {
+function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { brandId: string; brandName: string; audience: string; initialIdeas: ContentIdeaBrief[]; onBuild: (idea: ContentIdeaBrief) => void }) {
   const [ideaList, setIdeaList] = useState(initialIdeas);
-  const [selected, setSelected] = useState<ContentIdea | null>(initialIdeas[0] ?? null);
+  const [selected, setSelected] = useState<ContentIdeaBrief | null>(initialIdeas[0] ?? null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
@@ -417,7 +436,7 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
     }
   }
 
-  async function updateStatus(idea: ContentIdea, status: "SAVED" | "SKIPPED" | "BUILT") {
+  async function updateStatus(idea: ContentIdeaBrief, status: "SAVED" | "SKIPPED" | "BUILT") {
     const response = await fetch(`/api/ideas/${idea.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -433,8 +452,8 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
   return (
     <div className="viewStack ideasView">
       <section className="viewIntro">
-        <h2>Ideas worth making</h2>
-        <p>Fresh directions based on {brandName}&apos;s offers, audience, brand voice, and current content mix.</p>
+        <h2>Content worth making</h2>
+        <p>Manual-style post briefs built from {brandName}&apos;s Brand DNA: platform, hook, art-card text, caption, CTA, SEO keywords, and image prompt.</p>
         <div className="ideasToolbar">
           <div className="filterRow" aria-label="Idea filters">
             {filters.map((filter) => <button className={activeFilter === filter ? "active" : ""} type="button" key={filter} onClick={() => setActiveFilter(filter)}>{filter}</button>)}
@@ -454,9 +473,9 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
                 <IdeaConceptPreview brandName={brandName} idea={idea} />
               </button>
               <div className="ideaCardCopy">
-                <span>{idea.format}</span>
+                <span>{idea.platform || idea.format}</span>
                 <h3>{idea.title}</h3>
-                <p>{idea.purpose}</p>
+                <p>{idea.hook}</p>
                 <div>
                   <button type="button" onClick={() => updateStatus(idea, "SAVED")}>{idea.status === "SAVED" ? "Saved" : "Save"}</button>
                   <button type="button" onClick={() => updateStatus(idea, "SKIPPED")}>Skip</button>
@@ -468,10 +487,20 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
         </section>
 
         {selected ? <aside className="ideaInspector">
-          <IdeaConceptPreview brandName={brandName} idea={selected} variant="large" />
-          <p className="contextLabel">Selected idea</p>
+          <p className="contextLabel">Selected content brief</p>
           <h3>{selected.title}</h3>
           <p>{selected.reason}</p>
+          <div className="manualBrief">
+            <BriefBlock label="Platform" value={selected.platform || inferIdeaPlatform(selected.format)} />
+            <BriefBlock label="Format" value={selected.format} />
+            <BriefBlock label="Goal" value={selected.goal || selected.purpose} />
+            <BriefBlock label="Hook" value={selected.hook} />
+            <BriefBlock label="Art Card Text" value={selected.artCardText || `${selected.title}\n${selected.hook}\n${selected.cta || getIdeaCta(selected)}`} preserveLines />
+            <BriefBlock label="Caption" value={selected.caption || buildFallbackIdeaCaption(selected)} preserveLines />
+            <BriefBlock label="CTA" value={selected.cta || getIdeaCta(selected)} />
+            <BriefBlock label="SEO Keywords" value={selected.seoKeywords || inferSeoKeywords(selected, audience)} />
+            <BriefBlock label="Image Prompt" value={selected.imagePrompt} />
+          </div>
           <dl>
             <div><dt>Purpose</dt><dd>{selected.purpose}</dd></div>
             <div><dt>Best format</dt><dd>{selected.format}</dd></div>
@@ -487,7 +516,7 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
   );
 }
 
-function IdeaConceptPreview({ brandName, idea, variant = "grid" }: { brandName: string; idea: ContentIdea; variant?: "grid" | "large" }) {
+function IdeaConceptPreview({ brandName, idea, variant = "grid" }: { brandName: string; idea: ContentIdeaBrief; variant?: "grid" | "large" }) {
   return (
     <div className={variant === "large" ? "ideaConceptPreview large" : "ideaConceptPreview"}>
       <div className="ideaConceptTop">
@@ -501,6 +530,15 @@ function IdeaConceptPreview({ brandName, idea, variant = "grid" }: { brandName: 
         <em>{getIdeaCta(idea)}</em>
       </div>
     </div>
+  );
+}
+
+function BriefBlock({ label, value, preserveLines = false }: { label: string; value: string; preserveLines?: boolean }) {
+  return (
+    <section>
+      <span>{label}</span>
+      <p className={preserveLines ? "preserveLines" : undefined}>{value}</p>
+    </section>
   );
 }
 
@@ -819,7 +857,8 @@ function formatStatus(value: string) {
   return value.replaceAll("_", " ").toLowerCase().replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
-function getIdeaCta(idea: Pick<ContentIdea, "title" | "hook" | "imagePrompt">) {
+function getIdeaCta(idea: Pick<ContentIdeaBrief, "title" | "hook" | "imagePrompt" | "cta">) {
+  if (idea.cta?.trim()) return idea.cta;
   const text = `${idea.title} ${idea.hook} ${idea.imagePrompt}`.toLowerCase();
   if (text.includes("ask") || text.includes("what can")) return "Ask Us";
   if (text.includes("pickup")) return "Book Pickup";
@@ -828,7 +867,7 @@ function getIdeaCta(idea: Pick<ContentIdea, "title" | "hook" | "imagePrompt">) {
   return "Learn More";
 }
 
-function getIdeaLabel(idea: Pick<ContentIdea, "format" | "imagePrompt">) {
+function getIdeaLabel(idea: Pick<ContentIdeaBrief, "format" | "imagePrompt">) {
   const text = `${idea.format} ${idea.imagePrompt}`.toLowerCase();
   if (text.includes("faq")) return "FAQ";
   if (text.includes("checklist")) return "Checklist";
@@ -836,6 +875,26 @@ function getIdeaLabel(idea: Pick<ContentIdea, "format" | "imagePrompt">) {
   if (text.includes("proof")) return "Proof";
   if (text.includes("service")) return "Service";
   return "Idea";
+}
+
+function inferIdeaPlatform(format: string) {
+  const text = format.toLowerCase();
+  if (text.includes("google")) return "Google Business Profile";
+  if (text.includes("instagram")) return "Instagram";
+  if (text.includes("facebook")) return "Facebook";
+  return "Facebook, Instagram, Google Business Profile";
+}
+
+function buildFallbackIdeaCaption(idea: ContentIdeaBrief) {
+  return `${idea.hook}\n\n${idea.reason}\n\n${idea.cta || getIdeaCta(idea)}.`;
+}
+
+function inferSeoKeywords(idea: ContentIdeaBrief, audience: string) {
+  const text = `${idea.title} ${idea.hook} ${idea.imagePrompt} ${audience}`.toLowerCase();
+  if (text.includes("laundry") || text.includes("dry clean") || text.includes("comforter") || text.includes("shoe")) {
+    return "laundry service Metro Manila, dry cleaning Metro Manila, shoe cleaning Metro Manila, comforter cleaning Metro Manila";
+  }
+  return "N/A";
 }
 
 function formatShortDate(value: Date) {

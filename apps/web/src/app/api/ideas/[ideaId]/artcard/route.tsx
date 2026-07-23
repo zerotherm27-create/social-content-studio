@@ -18,7 +18,7 @@ export async function GET(request: Request, context: { params: Promise<{ ideaId:
   if (!idea) return new Response("Idea not found", { status: 404, headers: { "Cache-Control": "no-store" } });
   const assets = idea.brand.websiteUrl ? await readPublicBrandAssets(idea.brand.websiteUrl).catch(() => undefined) : undefined;
   const websiteHost = assets?.websiteHost ?? (idea.brand.websiteUrl ? new URL(idea.brand.websiteUrl).hostname.replace(/^www\./, "") : undefined);
-  const visualDirection = `${idea.imagePrompt} ${idea.brand.visualStyle}`;
+  const visualDirection = `${idea.imagePrompt} ${idea.brand.visualStyle} Manual content brief: Platform ${idea.platform}; Format ${idea.format}; Goal ${idea.goal || idea.purpose}; Hook ${idea.hook}; Art Card Text ${idea.artCardText}; CTA ${idea.cta}; Caption ${idea.caption}; SEO Keywords ${idea.seoKeywords}.`;
   const generatedArtCard = await generatePremiumArtCardImage({
     brandName: idea.brand.name,
     headline: idea.title,

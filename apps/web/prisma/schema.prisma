@@ -41,10 +41,16 @@ model Brand {
 model ContentIdea {
   id          String   @id @default(cuid())
   brandId     String
+  platform    String   @default("")
   title       String
   hook        String
   purpose     String
   format      String
+  goal        String   @default("")
+  artCardText String   @default("")
+  caption     String   @default("")
+  cta         String   @default("")
+  seoKeywords String   @default("")
   reason      String
   imagePrompt String
   status      String   @default("PROPOSED")

@@ -14,6 +14,12 @@ describe("generateContentIdeas", () => {
     const ideas = await generateContentIdeas(input, { apiKey: "", fetcher: vi.fn() });
     expect(ideas).toHaveLength(6);
     expect(ideas[0].title).toBeTruthy();
+    expect(ideas[0].platform).toContain("Facebook");
+    expect(ideas[0].goal).toBeTruthy();
+    expect(ideas[0].artCardText).toContain(ideas[0].title);
+    expect(ideas[0].caption).toContain("Ask us");
+    expect(ideas[0].cta).toBeTruthy();
+    expect(ideas[0].seoKeywords).toContain("service");
     expect(ideas.some((idea) => idea.format.includes("FAQ"))).toBe(true);
     expect(ideas.some((idea) => idea.purpose === "Proof")).toBe(true);
     expect(ideas[0].imagePrompt).toContain("Campaign angle:");
@@ -23,10 +29,16 @@ describe("generateContentIdeas", () => {
 
   it("parses structured ideas from the Responses API", async () => {
     const generated = Array.from({ length: 6 }, (_, index) => ({
+      platform: "Instagram, Facebook",
       title: `Idea ${index + 1}`,
       hook: `Hook ${index + 1}`,
       purpose: "Education",
       format: "Instagram carousel",
+      goal: "Reduce hesitation.",
+      artCardText: `Idea ${index + 1}\nHook ${index + 1}\nAsk Us`,
+      caption: `Hook ${index + 1}\n\nAsk us about it.`,
+      cta: "Ask Us",
+      seoKeywords: "coffee near me, cold brew",
       reason: "Useful to the audience.",
       imagePrompt: "Editorial coffee photography."
     }));
@@ -43,6 +55,8 @@ describe("generateContentIdeas", () => {
     expect(body.instructions).toContain("social media strategy agent");
     expect(promptPayload.socialIntelligence.qualityGate).toContain("Would a real social media manager post this for the brand?");
     expect(promptPayload.task.join(" ")).toContain("manual social-media-manager style");
+    expect(promptPayload.task.join(" ")).toContain("Art Card Text");
+    expect(promptPayload.task.join(" ")).toContain("Caption must be ready to post");
     expect(promptPayload.task.join(" ")).toContain("clean UI/card layouts");
   });
 });
