@@ -142,9 +142,19 @@ a { color: inherit; }
 .ideaCard:nth-child(2), .ideaCard:nth-child(4) { transform: translateY(28px); }
 .ideaCard:hover { border-color: var(--line-strong); }
 .ideaCard.selected { border-color: var(--coral); }
-.ideaImageButton { display: block; overflow: hidden; width: 100%; border: 0; padding: 0; background: var(--charcoal); cursor: pointer; }
-.ideaImage { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; transition: transform .35s cubic-bezier(.16, 1, .3, 1); }
-.ideaImageButton:hover .ideaImage { transform: scale(1.02); }
+.ideaImageButton { display: block; overflow: hidden; width: 100%; border: 0; padding: 0; background: #eaf2ef; cursor: pointer; text-align: left; }
+.ideaConceptPreview { position: relative; display: flex; flex-direction: column; justify-content: space-between; width: 100%; aspect-ratio: 4 / 5; padding: 18px; background: linear-gradient(150deg, #299cb6 0 52%, #f9ca47 52% 62%, #fff8e8 62%); transition: transform .35s cubic-bezier(.16, 1, .3, 1); }
+.ideaImageButton:hover .ideaConceptPreview { transform: scale(1.02); }
+.ideaConceptPreview.large { margin-bottom: 22px; border-radius: 10px; }
+.ideaConceptTop { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ideaConceptTop span { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: #18211b; background: rgba(255,255,255,.95); font-weight: 900; }
+.ideaConceptTop small { border-radius: 999px; padding: 7px 10px; color: #18211b; background: rgba(255,255,255,.9); font: 900 10px/1 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.ideaConceptTiles { position: absolute; inset: 82px 24px auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ideaConceptTiles i { display: block; aspect-ratio: 1; border-radius: 18px; background: rgba(255,255,255,.74); box-shadow: inset 0 -16px 0 rgba(249,202,71,.86); }
+.ideaConceptPanel { position: relative; z-index: 1; display: grid; gap: 8px; border-radius: 18px; padding: 17px; background: rgba(255,250,240,.96); box-shadow: 0 16px 40px rgba(24,33,27,.18); }
+.ideaConceptPanel strong { color: #18211b; font-size: 20px; line-height: 1.03; letter-spacing: -.04em; }
+.ideaConceptPanel p { margin: 0; color: #546056; font-size: 12px; line-height: 1.35; }
+.ideaConceptPanel em { justify-self: start; border-radius: 999px; padding: 7px 10px; color: #18211b; background: #f9ca47; font-size: 11px; font-style: normal; font-weight: 900; text-transform: uppercase; }
 .ideaCardCopy { padding: 17px; }
 .ideaCardCopy > span { color: var(--quiet); font: 11px/1.3 ui-monospace, monospace; text-transform: uppercase; }
 .ideaCardCopy h3 { margin: 9px 0 5px; font-size: 18px; letter-spacing: -.025em; }

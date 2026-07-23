@@ -1,7 +1,6 @@
-import { generateArtCardPhoto } from "@/lib/agent/art-image-agent";
+import { generatePremiumArtCardImage } from "@/lib/agent/art-image-agent";
 import { db } from "@/lib/db";
 import { dataUrlToBuffer } from "@/lib/draft-art-card";
-import { createRasterArtCard, isUsableRasterImage } from "@/lib/raster-art-card";
 import { readPublicBrandAssets } from "@/lib/safe-website";
 
 export const runtime = "nodejs";
@@ -20,7 +19,7 @@ export async function GET(request: Request, context: { params: Promise<{ ideaId:
   const assets = idea.brand.websiteUrl ? await readPublicBrandAssets(idea.brand.websiteUrl).catch(() => undefined) : undefined;
   const websiteHost = assets?.websiteHost ?? (idea.brand.websiteUrl ? new URL(idea.brand.websiteUrl).hostname.replace(/^www\./, "") : undefined);
   const visualDirection = `${idea.imagePrompt} ${idea.brand.visualStyle}`;
-  const generatedPhoto = await generateArtCardPhoto({
+  const generatedArtCard = await generatePremiumArtCardImage({
     brandName: idea.brand.name,
     headline: idea.title,
     subline: idea.hook,
@@ -32,30 +31,18 @@ export async function GET(request: Request, context: { params: Promise<{ ideaId:
     audience: idea.brand.audience,
     offerContext: idea.brand.offers
   }).catch((error) => {
-    console.error("Idea art-card photo generation failed", {
+    console.error("Idea art-card image generation failed", {
       ideaId,
       message: error instanceof Error ? error.message : String(error)
     });
     return undefined;
   });
 
-  const decodedPhoto = generatedPhoto ? dataUrlToBuffer(generatedPhoto) : undefined;
-  if (decodedPhoto && await isUsableRasterImage(decodedPhoto.body)) {
-    const card = await createRasterArtCard({
-      brandName: idea.brand.name,
-      headline: idea.title,
-      subline: idea.hook,
-      visualDirection,
-      platform,
-      brandColor: assets?.brandColor,
-      accentColor: assets?.accentColor,
-      websiteHost,
-      photo: decodedPhoto.body,
-      photoContentType: decodedPhoto.contentType
-    });
-    return new Response(new Uint8Array(card.body), {
+  const decodedImage = generatedArtCard ? dataUrlToBuffer(generatedArtCard) : undefined;
+  if (decodedImage) {
+    return new Response(new Uint8Array(decodedImage.body), {
       headers: {
-        "Content-Type": card.contentType,
+        "Content-Type": decodedImage.contentType,
         "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=60"
       }
     });
@@ -63,7 +50,7 @@ export async function GET(request: Request, context: { params: Promise<{ ideaId:
 
   return Response.json(
     {
-      error: "Real image generation failed or produced an unusable dark/blank image."
+      error: "Real image generation failed. Try again in a few moments if the image model is rate-limited."
     },
     {
       status: 502,

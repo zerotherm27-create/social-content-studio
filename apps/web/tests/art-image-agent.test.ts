@@ -22,13 +22,14 @@ describe("art image generation", () => {
   it("builds a premium full-art-card prompt instead of a template prompt", () => {
     const prompt = buildPremiumArtCardPrompt(input);
 
-    expect(prompt).toContain("finished premium social-media art card");
-    expect(prompt).toContain("not a template, not an SVG");
-    expect(prompt).toContain("Design the full art card yourself");
-    expect(prompt).toContain("FAQ, education, service-list");
-    expect(prompt).toContain("purposeful icons or service tiles");
-    expect(prompt).toContain("Avoid overlap");
-    expect(prompt).toContain("Do not add generic stamps");
+    expect(prompt).toContain("Create one complete, finished social-media art card");
+    expect(prompt).toContain("manually briefed Facebook/Instagram carousel cover");
+    expect(prompt).toContain("Do not create a black card");
+    expect(prompt).toContain("blank card");
+    expect(prompt).toContain("purposeful service/category visuals");
+    expect(prompt).toContain("simple useful icons, service tiles");
+    expect(prompt).toContain("Keep all text large and readable");
+    expect(prompt).toContain("Do not add generic labels");
     expect(prompt).toContain("Main headline text, exact spelling: Book in Minutes via Messenger.");
     expect(prompt).toContain("Supporting line text, exact spelling: Need laundry picked up today?");
     expect(prompt).toContain("CTA text: Book Pickup.");

@@ -1,7 +1,6 @@
 import type { Brand, Campaign, ContentDraft } from "@prisma/client";
-import { generateArtCardPhoto } from "@/lib/agent/art-image-agent";
+import { generatePremiumArtCardImage } from "@/lib/agent/art-image-agent";
 import { db } from "@/lib/db";
-import { createRasterArtCard, isUsableRasterImage } from "@/lib/raster-art-card";
 import { readPublicBrandAssets } from "@/lib/safe-website";
 
 type DraftWithBrandAndCampaign = ContentDraft & {
@@ -30,7 +29,7 @@ export async function createDraftArtCardAsset(draft: DraftWithBrandAndCampaign):
   const visualDirection = draft.visualDirection || draft.campaign.creativeDirection || draft.brand.visualStyle;
   const headline = draft.artHeadline || draft.campaign.title;
   const subline = draft.artSubline || draft.campaign.goal;
-  const generatedPhoto = await generateArtCardPhoto({
+  const generatedArtCard = await generatePremiumArtCardImage({
     brandName: draft.brand.name,
     headline,
     subline,
@@ -43,36 +42,24 @@ export async function createDraftArtCardAsset(draft: DraftWithBrandAndCampaign):
     offerContext: draft.campaign.source || draft.brand.offers,
     campaignGoal: draft.campaign.goal
   }).catch((error) => {
-    console.error("Draft art-card photo generation failed", {
+    console.error("Draft art-card image generation failed", {
       draftId: draft.id,
       message: error instanceof Error ? error.message : String(error)
     });
     return undefined;
   });
 
-  const decoded = generatedPhoto ? dataUrlToBuffer(generatedPhoto) : undefined;
-  if (decoded && await isUsableRasterImage(decoded.body)) {
-    const card = await createRasterArtCard({
-      brandName: draft.brand.name,
-      headline,
-      subline,
-      visualDirection,
-      platform: draft.platform,
-      brandColor: assets?.brandColor,
-      accentColor: assets?.accentColor,
-      websiteHost,
-      photo: decoded.body,
-      photoContentType: decoded.contentType
-    });
+  const decoded = generatedArtCard ? dataUrlToBuffer(generatedArtCard) : undefined;
+  if (decoded) {
     return {
       kind: "image",
-      body: card.body,
-      contentType: card.contentType,
+      body: decoded.body,
+      contentType: decoded.contentType,
       generatedImage: true
     };
   }
 
-  throw new Error("Real art-card image generation failed or produced an unusable dark/blank image.");
+  throw new Error("Real art-card image generation failed. Try again in a few moments if the image model is rate-limited.");
 }
 
 export function dataUrlToBuffer(dataUrl: string) {

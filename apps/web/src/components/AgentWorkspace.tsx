@@ -451,7 +451,7 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
           {filteredIdeas.map((idea) => (
             <article className={selected?.id === idea.id ? "ideaCard selected" : "ideaCard"} key={idea.id}>
               <button className="ideaImageButton" type="button" aria-label={`Inspect ${idea.title}`} onClick={() => setSelected(idea)}>
-                <img className="ideaImage" src={`/api/ideas/${idea.id}/artcard`} alt={`${idea.title} art card for ${brandName}`} />
+                <IdeaConceptPreview brandName={brandName} idea={idea} />
               </button>
               <div className="ideaCardCopy">
                 <span>{idea.format}</span>
@@ -468,7 +468,7 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
         </section>
 
         {selected ? <aside className="ideaInspector">
-          <img className="inspectorPreview" src={`/api/ideas/${selected.id}/artcard`} alt={`${selected.title} art card preview`} />
+          <IdeaConceptPreview brandName={brandName} idea={selected} variant="large" />
           <p className="contextLabel">Selected idea</p>
           <h3>{selected.title}</h3>
           <p>{selected.reason}</p>
@@ -483,6 +483,23 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
         </aside> : null}
       </div>
       }
+    </div>
+  );
+}
+
+function IdeaConceptPreview({ brandName, idea, variant = "grid" }: { brandName: string; idea: ContentIdea; variant?: "grid" | "large" }) {
+  return (
+    <div className={variant === "large" ? "ideaConceptPreview large" : "ideaConceptPreview"}>
+      <div className="ideaConceptTop">
+        <span>{brandName.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>
+        <small>{getIdeaLabel(idea)}</small>
+      </div>
+      <div className="ideaConceptTiles" aria-hidden="true"><i /><i /><i /></div>
+      <div className="ideaConceptPanel">
+        <strong>{idea.title}</strong>
+        <p>{idea.hook}</p>
+        <em>{getIdeaCta(idea)}</em>
+      </div>
     </div>
   );
 }
@@ -800,6 +817,25 @@ function formatPlatform(value: string) {
 
 function formatStatus(value: string) {
   return value.replaceAll("_", " ").toLowerCase().replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
+function getIdeaCta(idea: Pick<ContentIdea, "title" | "hook" | "imagePrompt">) {
+  const text = `${idea.title} ${idea.hook} ${idea.imagePrompt}`.toLowerCase();
+  if (text.includes("ask") || text.includes("what can")) return "Ask Us";
+  if (text.includes("pickup")) return "Book Pickup";
+  if (text.includes("message") || text.includes("messenger")) return "Message Us";
+  if (text.includes("book")) return "Book Now";
+  return "Learn More";
+}
+
+function getIdeaLabel(idea: Pick<ContentIdea, "format" | "imagePrompt">) {
+  const text = `${idea.format} ${idea.imagePrompt}`.toLowerCase();
+  if (text.includes("faq")) return "FAQ";
+  if (text.includes("checklist")) return "Checklist";
+  if (text.includes("carousel")) return "Carousel";
+  if (text.includes("proof")) return "Proof";
+  if (text.includes("service")) return "Service";
+  return "Idea";
 }
 
 function formatShortDate(value: Date) {

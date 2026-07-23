@@ -39,7 +39,7 @@ export async function generatePremiumArtCardImage(input: ArtImageInput, options:
     apiKey,
     model,
     fetcher: options.fetcher,
-    prompt: agenticPrompt ?? buildPremiumArtCardPrompt(input),
+    prompt: buildPremiumArtCardPrompt(input, agenticPrompt),
     size: getPremiumArtCardSize(input.platform, model),
     quality: process.env.OPENAI_PREMIUM_IMAGE_QUALITY ?? process.env.OPENAI_IMAGE_QUALITY ?? "high",
     outputFormat,
@@ -125,7 +125,7 @@ async function generateImageDataUrl(input: {
   return image ? `data:image/${input.outputFormat};base64,${image}` : undefined;
 }
 
-export function buildPremiumArtCardPrompt(input: ArtImageInput) {
+export function buildPremiumArtCardPrompt(input: ArtImageInput, agenticDirection?: string) {
   const exactHeadline = input.headline.trim();
   const exactSubline = input.subline.trim();
   const brandColorDirection = [
@@ -134,18 +134,16 @@ export function buildPremiumArtCardPrompt(input: ArtImageInput) {
   ].filter(Boolean).join(" ");
 
   return [
-    "Create one finished premium social-media art card as a polished raster image, not a template, not an SVG, and not a UI mockup.",
-    `Format: ${getPlatformFormatDirection(input.platform)}. The composition must be ready to post as a complete marketing graphic.`,
-    "Act like a senior brand designer and paid-social creative director. Use editorial spacing, visual hierarchy, clean typography, generous safe zones, and a modern commercial layout.",
-    "The image must look like a real brand post designed for Instagram/Facebook/Threads, not like a simple generated flyer.",
-    "Choose the correct visual format for the marketing job. A FAQ, education, service-list, comparison, or carousel-cover post may use a clean UI/card layout with purposeful icons or service tiles. A conversion or proof post may use a realistic photographic hero scene.",
-    "Design the full art card yourself: background, logo/brand lockup area, headline hierarchy, supporting line, proof/service elements, CTA treatment, and tasteful graphic accents.",
-    "When icons are useful, make them simple, premium, and category-specific, such as clothes, shoes, bedding, bags, linens, tools, checklist items, or service steps. Do not use random decorative icons.",
-    "Avoid overlap. No text may cover faces, products, garments, food, property features, hands, important service details, or the CTA.",
-    "Avoid clutter. Use one dominant hero visual, one headline, one short supporting line, one CTA, and at most three proof/benefit cues.",
-    "Do not add generic stamps such as EDUCATION, PROMOTION, MARKETING CARD, READY TO POST, or SAMPLE.",
+    `Create one complete, finished social-media art card for ${input.brandName}.`,
+    `Platform/format: ${getPlatformFormatDirection(input.platform)}. Make it ready to post, like a manually briefed Facebook/Instagram carousel cover or single-image art card.`,
+    "Use a clean modern brand-card layout: bright background, clear hierarchy, large readable headline, short supporting line, simple CTA, and purposeful service/category visuals.",
+    "Do not create a black card, blank card, dark placeholder, empty lower panel, wireframe, website mockup, unfinished template, or plain background.",
+    "If this is FAQ/service/education content, use simple useful icons, service tiles, or neat visual categories. If this is proof/conversion content, use a realistic service scene with graphic accents.",
+    "Use the brand colors deliberately and keep the design bright, polished, local-service friendly, and commercial.",
+    "Keep all text large and readable. Do not use tiny fake paragraphs, lorem ipsum, fake disclaimers, random stamps, or decorative unreadable text.",
+    "Do not add generic labels such as EDUCATION, PROMOTION, MARKETING CARD, READY TO POST, or SAMPLE.",
     "Do not invent unsupported prices, ratings, awards, guarantees, dates, certifications, or discounts.",
-    "If rendering text, render only the supplied brand/copy/CTA text, spell it exactly, keep it large and legible, and do not add lorem ipsum or fake small print.",
+    "Render only the supplied brand/copy/CTA text, spell it exactly, and do not add extra marketing claims.",
     `Brand name text: ${input.brandName}.`,
     `Main headline text, exact spelling: ${exactHeadline}.`,
     `Supporting line text, exact spelling: ${exactSubline}.`,
@@ -155,8 +153,9 @@ export function buildPremiumArtCardPrompt(input: ArtImageInput) {
     input.offerContext ? `Verified offer/context: ${input.offerContext}.` : "",
     input.campaignGoal ? `Marketing objective: ${input.campaignGoal}.` : "",
     brandColorDirection,
+    agenticDirection ? `Internal marketing/image-director brief to follow: ${agenticDirection}.` : "",
     `Brand/posting style and campaign art direction to apply: ${input.visualDirection}.`,
-    "Quality bar: the kind of practical, clean post a strong social media manager would manually brief: platform, format, goal, hook, art-card text, caption intent, CTA, SEO/search context when relevant, and a precise image prompt."
+    "Quality bar: it should look like a practical, clean social media manager brief turned into a real branded post, not AI filler."
   ].filter(Boolean).join(" ");
 }
 
