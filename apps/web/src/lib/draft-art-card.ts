@@ -1,6 +1,7 @@
 import type { Brand, Campaign, ContentDraft } from "@prisma/client";
-import { generatePremiumArtCardImage } from "@/lib/agent/art-image-agent";
+import { generateArtCardPhoto } from "@/lib/agent/art-image-agent";
 import { db } from "@/lib/db";
+import { createRasterArtCard, isUsableRasterImage } from "@/lib/raster-art-card";
 import { readPublicBrandAssets } from "@/lib/safe-website";
 
 type DraftWithBrandAndCampaign = ContentDraft & {
@@ -29,7 +30,7 @@ export async function createDraftArtCardAsset(draft: DraftWithBrandAndCampaign):
   const visualDirection = draft.visualDirection || draft.campaign.creativeDirection || draft.brand.visualStyle;
   const headline = draft.artHeadline || draft.campaign.title;
   const subline = draft.artSubline || draft.campaign.goal;
-  const generatedArtCard = await generatePremiumArtCardImage({
+  const generatedPhoto = await generateArtCardPhoto({
     brandName: draft.brand.name,
     headline,
     subline,
@@ -42,26 +43,36 @@ export async function createDraftArtCardAsset(draft: DraftWithBrandAndCampaign):
     offerContext: draft.campaign.source || draft.brand.offers,
     campaignGoal: draft.campaign.goal
   }).catch((error) => {
-    console.error("Draft art-card image generation failed", {
+    console.error("Draft art-card photo generation failed", {
       draftId: draft.id,
       message: error instanceof Error ? error.message : String(error)
     });
     return undefined;
   });
 
-  if (generatedArtCard) {
-    const decoded = dataUrlToBuffer(generatedArtCard);
-    if (decoded) {
-      return {
-        kind: "image",
-        body: decoded.body,
-        contentType: decoded.contentType,
-        generatedImage: true
-      };
-    }
+  const decoded = generatedPhoto ? dataUrlToBuffer(generatedPhoto) : undefined;
+  if (decoded && await isUsableRasterImage(decoded.body)) {
+    const card = await createRasterArtCard({
+      brandName: draft.brand.name,
+      headline,
+      subline,
+      visualDirection,
+      platform: draft.platform,
+      brandColor: assets?.brandColor,
+      accentColor: assets?.accentColor,
+      websiteHost,
+      photo: decoded.body,
+      photoContentType: decoded.contentType
+    });
+    return {
+      kind: "image",
+      body: card.body,
+      contentType: card.contentType,
+      generatedImage: true
+    };
   }
 
-  throw new Error("Real art-card image generation failed. Draft art cards require a generated raster image.");
+  throw new Error("Real art-card image generation failed or produced an unusable dark/blank image.");
 }
 
 export function dataUrlToBuffer(dataUrl: string) {
