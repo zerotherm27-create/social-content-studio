@@ -59,9 +59,10 @@ export async function POST(_request: Request, context: { params: Promise<{ campa
         visualDirection: draft.visualDirection,
         riskLevel: policy.riskLevel,
         approvalStatus: policy.status
-      }
+      },
+      select: contentDraftSelect
     });
-    createdDrafts.push(created);
+    createdDrafts.push(withMissingArtCardFields(created));
   }
 
   await db.campaign.update({
@@ -70,4 +71,32 @@ export async function POST(_request: Request, context: { params: Promise<{ campa
   });
 
   return NextResponse.json({ drafts: createdDrafts });
+}
+
+const contentDraftSelect = {
+  id: true,
+  brandId: true,
+  campaignId: true,
+  platform: true,
+  caption: true,
+  mediaType: true,
+  hashtags: true,
+  artHeadline: true,
+  artSubline: true,
+  visualDirection: true,
+  riskLevel: true,
+  approvalStatus: true,
+  scheduledAt: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function withMissingArtCardFields<T extends object>(record: T) {
+  return {
+    ...record,
+    artCardImageBase64: null,
+    artCardImageMimeType: null,
+    artCardPrompt: null,
+    artCardGeneratedAt: null
+  };
 }

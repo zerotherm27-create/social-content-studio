@@ -18,11 +18,29 @@ const createCampaignSchema = z.object({
 export async function GET() {
   const campaigns = await db.campaign.findMany({
     orderBy: { createdAt: "desc" },
-    include: { brand: true, drafts: true }
+    include: { brand: true, drafts: { select: campaignDraftSelect } }
   });
 
   return NextResponse.json({ campaigns });
 }
+
+const campaignDraftSelect = {
+  id: true,
+  brandId: true,
+  campaignId: true,
+  platform: true,
+  caption: true,
+  mediaType: true,
+  hashtags: true,
+  artHeadline: true,
+  artSubline: true,
+  visualDirection: true,
+  riskLevel: true,
+  approvalStatus: true,
+  scheduledAt: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
 
 export async function POST(request: Request) {
   const payload = createCampaignSchema.parse(await request.json());

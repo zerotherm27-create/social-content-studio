@@ -20,10 +20,21 @@ type ArtImageOptions = {
   fetcher?: typeof fetch;
 };
 
+export type GeneratedPremiumArtCard = {
+  dataUrl: string;
+  prompt: string;
+  model: string;
+};
+
 export async function generatePremiumArtCardImage(input: ArtImageInput, options: ArtImageOptions = {}) {
+  const asset = await generatePremiumArtCardAsset(input, options);
+  return asset?.dataUrl;
+}
+
+export async function generatePremiumArtCardAsset(input: ArtImageInput, options: ArtImageOptions = {}): Promise<GeneratedPremiumArtCard | undefined> {
   const apiKey = options.apiKey ?? process.env.OPENAI_API_KEY;
   if (!apiKey) return undefined;
-  const model = options.model ?? process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2";
+  const model = options.model ?? process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1";
   const outputFormat = "png";
   const agenticPrompt = await generateAgenticArtCardPrompt(input, {
     apiKey,
@@ -34,24 +45,27 @@ export async function generatePremiumArtCardImage(input: ArtImageInput, options:
     });
     return undefined;
   });
+  const prompt = buildPremiumArtCardPrompt(input, agenticPrompt);
 
-  return generateImageDataUrl({
+  const dataUrl = await generateImageDataUrl({
     apiKey,
     model,
     fetcher: options.fetcher,
-    prompt: buildPremiumArtCardPrompt(input, agenticPrompt),
+    prompt,
     size: getPremiumArtCardSize(input.platform, model),
     quality: process.env.OPENAI_PREMIUM_IMAGE_QUALITY ?? process.env.OPENAI_IMAGE_QUALITY ?? "high",
     outputFormat,
     outputCompression: undefined,
     logContext: "Premium art-card image generation"
   });
+
+  return dataUrl ? { dataUrl, prompt, model } : undefined;
 }
 
 export async function generateArtCardPhoto(input: ArtImageInput, options: ArtImageOptions = {}) {
   const apiKey = options.apiKey ?? process.env.OPENAI_API_KEY;
   if (!apiKey) return undefined;
-  const model = options.model ?? process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2";
+  const model = options.model ?? process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1";
 
   return generateImageDataUrl({
     apiKey,
@@ -134,12 +148,26 @@ export function buildPremiumArtCardPrompt(input: ArtImageInput, agenticDirection
   ].filter(Boolean).join(" ");
 
   return [
-    `Create one complete, finished social-media art card for ${input.brandName}.`,
-    `Platform/format: ${getPlatformFormatDirection(input.platform)}. Make it ready to post, like a manually briefed Facebook/Instagram carousel cover or single-image art card.`,
-    "Use a clean modern brand-card layout: bright background, clear hierarchy, large readable headline, short supporting line, simple CTA, and purposeful service/category visuals.",
-    "Do not create a black card, blank card, dark placeholder, empty lower panel, wireframe, website mockup, unfinished template, or plain background.",
-    "If this is FAQ/service/education content, use simple useful icons, service tiles, or neat visual categories. If this is proof/conversion content, use a realistic service scene with graphic accents.",
-    "Use the brand colors deliberately and keep the design bright, polished, local-service friendly, and commercial.",
+    `Create one complete, finished modern corporate social-media poster/art card for ${input.brandName}.`,
+    `Platform/format: ${getPlatformFormatDirection(input.platform)}. Make it ready to post, like a polished Canva-style corporate flyer or recruitment/promotional artcard, not a plain generated picture.`,
+    "Target design label: modern corporate promotional poster with a clean infographic and photo-composite style.",
+    "Follow this exact poster blueprint: top-left brand/logo area; large headline block beneath; one short supporting line; one row of 3 simple circular icon/info chips; one compact detail/info panel only if it uses supplied copy; one prominent rounded yellow CTA button; one tiny website/contact line directly below the CTA; right-side hero photo area. Do not add any other text zones.",
+    "Use a 55/45 split composition: left side is a white information panel, right side is a polished photo area. Separate them with one flowing vertical curve edged in yellow. The curve should feel like a deliberate corporate flyer layout, not random decoration.",
+    "Hero image rule: use one friendly, realistic staff/customer/service portrait or result photo, clean lighting, teal uniform or brand-colored accent, and relevant service context in the background. The person/object must not cover the headline or CTA.",
+    "Use clean corporate branding: consistent teal, white, and yellow brand-color rhythm when brand colors are not otherwise supplied; rounded shapes; bright lighting; welcoming commercial tone.",
+    "Use a photo-based promotional layout: one polished realistic service/staff/customer/result photo area combined with crisp graphic elements, not a full-frame photo and not a flat SVG template.",
+    "Use modern flat-design graphics: simple line icons, rounded panels, circles, pill labels, contact/detail blocks, and bold geometric shapes that feel like a professional social media designer made them.",
+    "Use editorial infographic structure: divide important details into clearly organized blocks such as offer, service, steps, location, qualification, benefits, contact, or CTA depending on the supplied copy. Keep the blocks visually structured even if the exact text is short.",
+    "Use bold typographic advertising: oversized sans-serif headline, strong hierarchy, clean supporting line, and a prominent CTA badge/button.",
+    "Use a curved split-layout design: a white information area and a photo/brand-color area separated by a flowing yellow-edged curve or sweeping shape. Create depth with overlapping circles, rounded cards, and subtle shadows.",
+    "Make the result feel friendly and commercial: bright, trustworthy, approachable, like a real local brand’s social-media recruitment/promo flyer.",
+    "Text discipline: each supplied text item may appear once only. Do not repeat the headline, subline, CTA, service list, website, location, audience, or contact text anywhere else on the poster.",
+    "Audience and context discipline: audience, location, SEO keywords, and offer context are for visual direction only. Do not render them as readable text unless they are part of the supplied headline, subline, CTA, art-card text, or website/contact.",
+    "Footer discipline: do not create any large footer panel, bottom banner, bottom teal block, bottom caption area, repeated website line, repeated location line, or extra bottom message. Keep the lower area clean. The website/contact may appear once only, small, directly under the CTA.",
+    "Typography discipline: use a maximum of 6 readable text groups total: brand, headline, subline, up to three icon/info labels, CTA, website/contact. Leave clean whitespace between groups.",
+    "Do not create a black card, blank card, dark placeholder, empty lower panel, wireframe, website mockup, unfinished template, plain background, or generic AI stock-photo scene.",
+    "If this is FAQ/service/education content, use structured infographic panels, useful icons, or service tiles. If this is proof/conversion content, use a realistic photo-composite scene with graphic accents and CTA blocks.",
+    "Use the brand colors deliberately and keep the design bright, polished, local-service friendly, and corporate-commercial.",
     "Keep all text large and readable. Do not use tiny fake paragraphs, lorem ipsum, fake disclaimers, random stamps, or decorative unreadable text.",
     "Do not add generic labels such as EDUCATION, PROMOTION, MARKETING CARD, READY TO POST, or SAMPLE.",
     "Do not invent unsupported prices, ratings, awards, guarantees, dates, certifications, or discounts.",
@@ -155,7 +183,7 @@ export function buildPremiumArtCardPrompt(input: ArtImageInput, agenticDirection
     brandColorDirection,
     agenticDirection ? `Internal marketing/image-director brief to follow: ${agenticDirection}.` : "",
     `Brand/posting style and campaign art direction to apply: ${input.visualDirection}.`,
-    "Quality bar: it should look like a practical, clean social media manager brief turned into a real branded post, not AI filler."
+    "Quality bar: it should look like a real Canva-style corporate social-media artcard made by a professional graphic designer, with photo composite, rounded information blocks, bold headline hierarchy, clean brand consistency, a clean lower margin, and no duplicate footer copy — not AI filler."
   ].filter(Boolean).join(" ");
 }
 

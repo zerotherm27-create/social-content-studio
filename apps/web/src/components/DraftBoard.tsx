@@ -115,8 +115,11 @@ export function DraftBoard({ drafts }: { drafts: ContentDraft[] }) {
                       API setup needed
                     </button>
                   )}
-                  <a className="buttonLink" href={`/api/drafts/${draft.id}/artcard`} target="_blank" rel="noreferrer">Open creative</a>
-                  <a className="buttonLink" href={`/api/drafts/${draft.id}/artcard.png`} download>Download PNG</a>
+                  <a className="buttonLink" href={`/api/drafts/${draft.id}/artcard?platform=${encodeURIComponent(draft.platform)}`} target="_blank" rel="noreferrer">Open master</a>
+                  <a className="buttonLink" href={`/api/drafts/${draft.id}/artcard.png?platform=INSTAGRAM`} download>Feed 4:5</a>
+                  <a className="buttonLink" href={`/api/drafts/${draft.id}/artcard.png?platform=STORY`} download>Story 9:16</a>
+                  <a className="buttonLink" href={`/api/drafts/${draft.id}/artcard.png?platform=SQUARE`} download>Square</a>
+                  <a className="buttonLink" href={`/api/drafts/${draft.id}/artcard.png?platform=GOOGLE_BUSINESS`} download>Google 4:3</a>
                 </div>
               </footer>
             </article>

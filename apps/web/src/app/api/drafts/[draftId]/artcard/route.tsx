@@ -4,9 +4,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-export async function GET(_request: Request, context: { params: Promise<{ draftId: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ draftId: string }> }) {
   const { draftId } = await context.params;
-  const result = await loadDraftArtCardAsset(draftId).catch((error) => {
+  const platform = new URL(request.url).searchParams.get("platform") ?? undefined;
+  const result = await loadDraftArtCardAsset(draftId, platform).catch((error) => {
     console.error("Draft art-card route failed", {
       draftId,
       message: error instanceof Error ? error.message : String(error)
@@ -24,8 +25,9 @@ export async function GET(_request: Request, context: { params: Promise<{ draftI
 
   return new Response(new Uint8Array(result.body), {
     headers: {
-      "Content-Type": result.contentType,
-      "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=60"
+      "Content-Type": "image/png",
+      "X-Art-Card-Format": result.format.key,
+      "Cache-Control": "no-store"
     }
   });
 }

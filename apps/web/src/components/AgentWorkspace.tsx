@@ -472,7 +472,7 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
 
   function openArtCard(idea: ContentIdeaBrief) {
     setOpeningArtCardId(idea.id);
-    window.open(`/api/ideas/${idea.id}/artcard`, "_blank", "noopener,noreferrer");
+    window.open(`/api/ideas/${idea.id}/artcard?platform=${encodeURIComponent(idea.platform || "INSTAGRAM")}`, "_blank", "noopener,noreferrer");
     window.setTimeout(() => setOpeningArtCardId((current) => current === idea.id ? null : current), 2600);
   }
 
@@ -538,7 +538,13 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
           </dl>
           <LoadingButton className="primaryAction fullWidth" loading={isIdeaActionPending(pendingIdeaAction, selected.id, "BUILT")} type="button" onClick={() => updateStatus(selected, "BUILT")}>{isIdeaActionPending(pendingIdeaAction, selected.id, "BUILT") ? "Opening builder…" : "Build this idea"}</LoadingButton>
           <LoadingButton className="secondaryAction fullWidth" loading={isIdeaActionPending(pendingIdeaAction, selected.id, "SAVED")} type="button" onClick={() => updateStatus(selected, "SAVED")}>{isIdeaActionPending(pendingIdeaAction, selected.id, "SAVED") ? "Saving…" : selected.status === "SAVED" ? "Saved for later" : "Save for later"}</LoadingButton>
-          <LoadingButton className="artCardDownload" loading={openingArtCardId === selected.id} type="button" onClick={() => openArtCard(selected)}>{openingArtCardId === selected.id ? "Generating art card…" : "Open full-size art card"}</LoadingButton>
+          <LoadingButton className="artCardDownload" loading={openingArtCardId === selected.id} type="button" onClick={() => openArtCard(selected)}>{openingArtCardId === selected.id ? "Generating art card…" : "Open master art card"}</LoadingButton>
+          <div className="buttonRow">
+            <a className="buttonLink" href={`/api/ideas/${selected.id}/artcard?platform=INSTAGRAM`} target="_blank" rel="noreferrer">Feed 4:5</a>
+            <a className="buttonLink" href={`/api/ideas/${selected.id}/artcard?platform=STORY`} target="_blank" rel="noreferrer">Story 9:16</a>
+            <a className="buttonLink" href={`/api/ideas/${selected.id}/artcard?platform=SQUARE`} target="_blank" rel="noreferrer">Square</a>
+            <a className="buttonLink" href={`/api/ideas/${selected.id}/artcard?platform=GOOGLE_BUSINESS`} target="_blank" rel="noreferrer">Google 4:3</a>
+          </div>
         </aside> : null}
       </div>
       }

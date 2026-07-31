@@ -52,7 +52,8 @@ export async function POST(request: Request, context: { params: Promise<{ draftI
       data: {
         scheduledAt,
         approvalStatus: ApprovalStatus.SCHEDULED
-      }
+      },
+      select: { id: true }
     });
 
     const queuedJob = await tx.publishJob.findFirst({
@@ -82,13 +83,44 @@ export async function POST(request: Request, context: { params: Promise<{ draftI
 
     return tx.contentDraft.findUniqueOrThrow({
       where: { id: updatedDraft.id },
-      include: { publishJobs: true }
+      select: {
+        ...contentDraftSelect,
+        publishJobs: true
+      }
     });
   });
 
-  return NextResponse.json({ draft });
+  return NextResponse.json({ draft: withMissingArtCardFields(draft) });
 }
 
 function canAutoPublish(platform: string) {
   return platform === Platform.GOOGLE_BUSINESS || platform === Platform.FACEBOOK || platform === Platform.INSTAGRAM || platform === Platform.THREADS;
+}
+
+const contentDraftSelect = {
+  id: true,
+  brandId: true,
+  campaignId: true,
+  platform: true,
+  caption: true,
+  mediaType: true,
+  hashtags: true,
+  artHeadline: true,
+  artSubline: true,
+  visualDirection: true,
+  riskLevel: true,
+  approvalStatus: true,
+  scheduledAt: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function withMissingArtCardFields<T extends object>(record: T) {
+  return {
+    ...record,
+    artCardImageBase64: null,
+    artCardImageMimeType: null,
+    artCardPrompt: null,
+    artCardGeneratedAt: null
+  };
 }

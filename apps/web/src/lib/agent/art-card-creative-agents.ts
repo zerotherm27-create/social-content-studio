@@ -125,16 +125,16 @@ export function buildArtCardPromptAgentRequest(input: ArtImageInput, model: stri
             cta: getAgentCta(input)
           },
           preferredManualBriefShape: {
-            title: "What We Clean FAQ",
-            platforms: ["Google", "Facebook", "Instagram carousel"],
-            format: "FAQ post",
-            goal: "Reduce friction",
-            hook: "Can we clean that? Most likely, yes.",
-            artCardText: ["What Can We Clean?", "Clothes, shoes, bedding, bags, linens, and more.", "Ask Us"],
-            caption: "Not sure if your item can be cleaned? Ask us. Then list exact services from Brand DNA.",
-            cta: "Send us a message and ask about your item.",
-            seoKeywords: ["laundry service Metro Manila", "dry cleaning Metro Manila", "shoe cleaning Metro Manila", "comforter cleaning Metro Manila"],
-            imagePromptStyle: "Clean FAQ-style art card, service/category icons, brand colors, logo, modern UI card layout."
+            title: "Modern corporate poster artcard",
+            platforms: ["Google", "Facebook", "Instagram carousel", "Instagram feed"],
+            format: "Photo-composite corporate poster / Canva-style social artcard",
+            goal: "Make the brand look trustworthy, organized, and ready to act on",
+            hook: "Clear oversized headline with one direct customer action.",
+            artCardText: ["Large headline", "Short supporting line", "Organized info blocks", "Prominent CTA"],
+            caption: "Use Brand DNA to explain the offer or hiring/promo message in a friendly, practical tone.",
+            cta: "Use the safest supplied CTA such as Book Pickup, Message Us, Apply Now, or Learn More.",
+            seoKeywords: ["laundry service Metro Manila", "wash dry fold", "dry cleaning", "pickup and delivery"],
+            imagePromptStyle: "Modern corporate promotional poster with clean teal-white-yellow branding, a 55/45 split composition, white info panel on the left, photo-composite staff/service image on the right, one flowing yellow-edged curve between panels, rounded infographic chips, simple line icons, oversized sans-serif headline, prominent CTA badge, and no duplicate footer text."
           },
           platform,
           inferredStrategy: {
@@ -146,12 +146,16 @@ export function buildArtCardPromptAgentRequest(input: ArtImageInput, model: stri
           handoffRules: [
             "Do not invent unsupported prices, awards, dates, review counts, guarantees, discounts, locations, certifications, or claims.",
             "Use the supplied headline, subline, CTA, brand name, and source domain as the only readable text in the art card.",
-            "If the topic is FAQ, education, service coverage, pricing explanation, comparison, checklist, or carousel cover, prefer a clean information-card layout over a photorealistic hero scene.",
-            "For FAQ/service-list posts, use simple category icons, labeled UI tiles, or product/service illustrations when they clarify the answer. Icons are allowed when purposeful.",
-            "The final prompt must describe one complete designed social asset: layout grid, visual system, headline area, subtext area, proof/service cue, CTA treatment, color use, and safe zones.",
+            "Prefer a modern corporate poster layout over a raw photorealistic scene: photo-composite plus designed infographic sections.",
+            "Use clean corporate branding: teal/white/yellow rhythm unless Brand DNA supplies different colors, rounded panels, circles, icon blocks, and bold geometric shapes.",
+            "Use a curved split layout where a white information area and photo area are separated by a flowing yellow-edged curve.",
+            "Use a strict text map: brand/logo once, headline once, subline once, up to three icon/info labels, CTA once, optional small website/contact once.",
+            "Audience, location, SEO keywords, and offer context guide visuals only. Do not render them as readable text unless the supplied poster copy explicitly contains them.",
+            "Do not create a large bottom banner, bottom teal block, repeated footer copy, repeated website, or repeated location. Website/contact may appear once only, small, directly under the CTA.",
+            "The final prompt must describe one complete designed social asset: layout grid, photo zone, headline area, structured info blocks, proof/service cue, CTA treatment, color use, safe zones, and text placement limits.",
             "Make the image do a marketing job, not just look pretty.",
             "Choose the format a real social media manager would manually make for this post, not always a photo ad.",
-            "Avoid generic flyer layout, collage, fake app UI, random decorative icons, text over the hero subject, tiny unreadable print, and random badge stamps.",
+            "Avoid generic flyer layout, messy collage, fake app UI, random decorative icons, text over the hero subject, tiny unreadable print, random badge stamps, or flat SVG-template output.",
             "Keep the prompt concise enough for image generation while preserving the creative direction."
           ]
         })

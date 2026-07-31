@@ -88,11 +88,13 @@ async function fetchBrandWorkspace(brandId: string) {
     }),
     db.contentIdea.findMany({
       where: { brandId },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      select: contentIdeaSelect
     }),
     db.contentDraft.findMany({
       where: { brandId },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      select: contentDraftSelect
     }),
     db.campaign.findMany({
       where: { brandId },
@@ -100,5 +102,59 @@ async function fetchBrandWorkspace(brandId: string) {
     })
   ]);
 
-  return brand ? { ...brand, socialAccounts, ideas, drafts, campaigns } : null;
+  return brand ? {
+    ...brand,
+    socialAccounts,
+    ideas: ideas.map(withMissingArtCardFields),
+    drafts: drafts.map(withMissingArtCardFields),
+    campaigns
+  } : null;
+}
+
+const contentIdeaSelect = {
+  id: true,
+  brandId: true,
+  platform: true,
+  title: true,
+  hook: true,
+  purpose: true,
+  format: true,
+  goal: true,
+  artCardText: true,
+  caption: true,
+  cta: true,
+  seoKeywords: true,
+  reason: true,
+  imagePrompt: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+const contentDraftSelect = {
+  id: true,
+  brandId: true,
+  campaignId: true,
+  platform: true,
+  caption: true,
+  mediaType: true,
+  hashtags: true,
+  artHeadline: true,
+  artSubline: true,
+  visualDirection: true,
+  riskLevel: true,
+  approvalStatus: true,
+  scheduledAt: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
+
+function withMissingArtCardFields<T extends object>(record: T) {
+  return {
+    ...record,
+    artCardImageBase64: null,
+    artCardImageMimeType: null,
+    artCardPrompt: null,
+    artCardGeneratedAt: null
+  };
 }
