@@ -92,7 +92,7 @@ export async function publishJob(jobId: string) {
       data: { status: PublishStatus.SUCCEEDED }
     });
 
-    await db.contentDraft.update({
+    await db.contentDraft.updateMany({
       where: { id: job.draft.id },
       data: {
         approvalStatus: ApprovalStatus.PUBLISHED,
@@ -122,7 +122,7 @@ export async function publishJob(jobId: string) {
       }
     });
 
-    await db.contentDraft.update({
+    await db.contentDraft.updateMany({
       where: { id: job.draft.id },
       data: { approvalStatus: ApprovalStatus.FAILED }
     });
@@ -218,7 +218,22 @@ async function publishDraftToPlatform(draft: Awaited<ReturnType<typeof loadDraft
 function loadDraftForPublishing(draftId: string) {
   return db.contentDraft.findUnique({
     where: { id: draftId },
-    include: {
+    select: {
+      id: true,
+      brandId: true,
+      campaignId: true,
+      platform: true,
+      caption: true,
+      mediaType: true,
+      hashtags: true,
+      artHeadline: true,
+      artSubline: true,
+      visualDirection: true,
+      riskLevel: true,
+      approvalStatus: true,
+      scheduledAt: true,
+      createdAt: true,
+      updatedAt: true,
       brand: {
         include: { socialAccounts: true }
       }

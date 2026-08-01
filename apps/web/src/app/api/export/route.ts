@@ -4,7 +4,7 @@ import { buildManualExport } from "@/lib/export";
 
 export async function GET() {
   const brand = await db.brand.findFirst({
-    include: { drafts: true }
+    include: { drafts: { select: exportDraftSelect } }
   });
 
   if (!brand) {
@@ -13,3 +13,13 @@ export async function GET() {
 
   return NextResponse.json(buildManualExport({ brandName: brand.name, drafts: brand.drafts }));
 }
+
+const exportDraftSelect = {
+  platform: true,
+  caption: true,
+  mediaType: true,
+  hashtags: true,
+  riskLevel: true,
+  approvalStatus: true,
+  scheduledAt: true
+} as const;

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { MediaType, Platform, type Platform as PlatformValue } from "../domain";
 import { type GeneratedDraft, generateDrafts } from "./mock-agent";
+import { buildAgenticDraftRules } from "./art-card-creative-agents";
+import { buildSocialIntelligenceBrief } from "./social-intelligence";
 
 type GenerateDraftsInput = {
   brandName: string;
@@ -67,11 +69,13 @@ export function parseOpenAIResponseText(outputText: string): GeneratedDraft[] {
   return parsed.drafts;
 }
 
-function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
+export function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
+  const socialIntelligence = buildSocialIntelligenceBrief(input);
+
   return {
     model,
     instructions:
-      "You are Orbit's senior social media creator, direct-response copywriter, and professional graphic-design art director. Think like a working creative lead preparing real client assets for posting: choose a sharp campaign angle, write platform-native copy, and direct a clean pub mat/poster layout that could be handed to a designer. Every draft must communicate one offer, one customer benefit, one visual idea, and one clear next step while staying truthful to the source. Return only structured JSON that matches the schema.",
+      "You are Orbit, an autonomous social media content agent: senior strategist, platform-native social media manager, direct-response copywriter, brand guardian, publishing QA, and professional art director. Think before writing: diagnose the campaign angle, audience tension, funnel stage, platform role, creative proof, and safest next action. Then create content that the brand could realistically publish today. Return only structured JSON that matches the schema.",
     input: [
       {
         role: "user",
@@ -95,26 +99,32 @@ function buildOpenAIRequest(input: GenerateDraftsInput, model: string) {
                 creativeDirection: input.creativeDirection
               },
               platforms: input.platforms,
+              socialIntelligence,
               rules: [
+                ...buildAgenticDraftRules(),
                 "Write one draft for each requested platform.",
-                "First decide the campaign angle internally: booking, limited offer, launch, local visit, property inquiry, event, useful guide, or social proof. Make every field support that same angle.",
-                "Then choose a static-ad format internally: problem-solution, before-after, review/proof, comparison, offer stack, founder/brand POV, or advertorial-style static. Use the format that best fits the available facts.",
-                "Build the art card like a mobile feed ad, not a flyer: one dominant hero visual, one hook, one proof or offer detail, and one CTA. Avoid extra body copy on the image.",
+                "Use the supplied socialIntelligence object as your strategy brief. Do not ignore the platform playbook or quality gate.",
+                "For each platform, choose a different platform-native expression of the same campaign strategy. Do not paste the same caption across channels.",
+                "First decide the post job internally: stop scroll, educate, prove, convert, invite reply, drive local visit, or support rebooking. Make every field support that job.",
+                "Then choose a creative format internally: FAQ post, service menu, checklist, carousel cover, problem-solution, before-after, review/proof, comparison, offer stack, founder/brand POV, process proof, customer POV, local utility, or advertorial-style static. Use the format a human social media manager would choose for the job.",
+                "For friction-reduction, FAQ, service coverage, education, comparison, or local search topics, prefer the user's manual content shape: Platform, Format, Goal, Hook, Art Card Text, Caption, CTA, SEO Keywords, Image Prompt.",
+                "Build the art card like a practical premium social asset, not always a photo ad: one clear headline, one helpful subtext line, one CTA, and purposeful visual proof such as icons, service tiles, checklist rows, or a photo only when it is truly useful.",
                 "Keep captions specific to the platform, audience, funnel stage, and desired customer action.",
                 "Lead captions with a concrete customer situation, useful benefit, offer detail, or product truth. Never lead with generic announcement language like 'Exciting news' or 'We are thrilled'.",
                 "Use only prices, dates, features, proof, locations, and terms explicitly present in the source or brand context.",
-                "Write like a skilled social media manager: make the first line scroll-stopping, keep the body useful and natural, and end promotional captions with one specific call to action. Do not repeat the exact CTA line from the art card.",
+                "Write like a skilled social media manager: make the first line scroll-stopping, keep the body useful and natural, and end promotional captions with one specific call to action. Do not repeat the exact CTA line from the art card unless the platform needs directness.",
                 "Use 2 to 6 relevant hashtags.",
                 "Use mediaType VIDEO only for TikTok unless the platform clearly benefits from video.",
                 "Write a pub-mat artHeadline of 3 to 7 words. It must read like a poster headline: direct, commercial, and instantly understandable. Never use vague lines like 'Your moment starts here'.",
                 "Write an artSubline of 6 to 16 words that adds a different benefit, proof point, term, deadline, location, or reason to act. Do not echo the headline.",
-                "Create a concrete visualDirection like a professional art director: specify hero subject, action, setting, composition, crop, brand-color placement, foreground/background relationship, and negative space for copy.",
-                "Make the visualDirection describe a real shootable scene for the product/service, not an abstract design: what is in the frame, where it sits, what the customer is doing, and what detail proves the offer.",
-                "For the pub mat, avoid clutter. The design should have clear hierarchy: brand, dominant visual idea, offer badge, headline, supporting benefit, proof/reason, CTA.",
-                "Show the product or service being used in a believable customer moment. Avoid generic smiling portraits, mood-only imagery, collages, floating graphics, fake UI, and text inside the generated scene.",
+                "Create the visualDirection as a full premium art-card generation prompt, not a template instruction and not just a photo prompt. Include: chosen post format, layout structure, logo/brand placement, headline placement, icon/photo/tile treatment, proof elements, CTA treatment, color use, and what should remain untouched by text.",
+                "Make the visualDirection describe a real brand-post composition. For example: clean FAQ-style card, logo top-left, headline 'What Can We Clean?', service icons for clothes/shoes/bedding/bags/linens, teal and yellow accents, subtext line, CTA button. Only use this example when it matches the brand evidence.",
+                "For the pub mat, avoid clutter. The design should have clear hierarchy: brand, dominant visual idea, headline, supporting benefit, proof/reason, CTA. Never plan text over the main product, face, garment, food, property feature, or other hero subject.",
+                "If using photography, show the product or service in a believable customer moment. If using icons or UI tiles, keep them purposeful, premium, simple, and directly tied to the services or proof.",
                 "Do not put hashtags, unsupported prices, or unverifiable claims in the art card copy.",
                 "Never use the brand's banned phrases.",
                 "Avoid unverifiable guarantees, vague superlatives, AI copywriting clichés, and regulated claims.",
+                "Before finalizing each draft, mentally run the qualityGate: if the post feels generic, unsupported, off-platform, cluttered, or unlike the brand, revise it.",
                 "Facebook should feel human, local, and community-aware with a clear reason to respond.",
                 "Instagram should be visual, concise, saveable, and benefit-led. The art headline should be especially strong here.",
                 "Google Business should prioritize local search intent, opening/booking/order action, and exact practical details.",

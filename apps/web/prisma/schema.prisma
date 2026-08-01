@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -38,18 +39,28 @@ model Brand {
 }
 
 model ContentIdea {
-  id          String   @id @default(cuid())
-  brandId     String
-  title       String
-  hook        String
-  purpose     String
-  format      String
-  reason      String
-  imagePrompt String
-  status      String   @default("PROPOSED")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  id                   String   @id @default(cuid())
+  brandId              String
+  platform             String   @default("")
+  title                String
+  hook                 String
+  purpose              String
+  format               String
+  goal                 String   @default("")
+  artCardText          String   @default("")
+  caption              String   @default("")
+  cta                  String   @default("")
+  seoKeywords          String   @default("")
+  reason               String
+  imagePrompt          String
+  artCardImageBase64   String?  @db.Text
+  artCardImageMimeType String?
+  artCardPrompt        String?  @db.Text
+  artCardGeneratedAt   DateTime?
+  status               String   @default("PROPOSED")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  brand                Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
 }
 
 model SocialAccount {
@@ -87,24 +98,28 @@ model Campaign {
 }
 
 model ContentDraft {
-  id             String         @id @default(cuid())
-  brandId        String
-  campaignId     String
-  platform       String
-  caption        String
-  mediaType      String
-  hashtags       String
-  artHeadline    String          @default("")
-  artSubline     String          @default("")
-  visualDirection String         @default("")
-  riskLevel      String
-  approvalStatus String         @default("PENDING_REVIEW")
-  scheduledAt    DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  brand          Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  campaign       Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  publishJobs    PublishJob[]
+  id                   String         @id @default(cuid())
+  brandId              String
+  campaignId           String
+  platform             String
+  caption              String
+  mediaType            String
+  hashtags             String
+  artHeadline          String          @default("")
+  artSubline           String          @default("")
+  visualDirection      String          @default("")
+  artCardImageBase64   String?         @db.Text
+  artCardImageMimeType String?
+  artCardPrompt        String?         @db.Text
+  artCardGeneratedAt   DateTime?
+  riskLevel            String
+  approvalStatus       String         @default("PENDING_REVIEW")
+  scheduledAt          DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  brand                Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaign             Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  publishJobs          PublishJob[]
 }
 
 model ApprovalRule {

@@ -2,7 +2,7 @@
 
 import type { Brand, Campaign, ContentDraft, ContentIdea } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { type CSSProperties, type FormEvent, useMemo, useState } from "react";
+import { type ButtonHTMLAttributes, type CSSProperties, type FormEvent, useEffect, useMemo, useState } from "react";
 import { AgentComposer } from "@/components/AgentComposer";
 import { ConnectedAccounts } from "@/components/ConnectedAccounts";
 import { DraftBoard } from "@/components/DraftBoard";
@@ -11,8 +11,17 @@ import { Platform } from "@/lib/domain";
 type BrandWorkspace = Brand & {
   drafts: ContentDraft[];
   socialAccounts: PublicSocialAccount[];
-  ideas: ContentIdea[];
+  ideas: ContentIdeaBrief[];
   campaigns: Campaign[];
+};
+
+type ContentIdeaBrief = ContentIdea & {
+  platform?: string;
+  goal?: string;
+  artCardText?: string;
+  caption?: string;
+  cta?: string;
+  seoKeywords?: string;
 };
 
 export type PublicSocialAccount = {
@@ -153,8 +162,18 @@ export function AgentWorkspace({ brand, brands }: { brand: BrandWorkspace; brand
             onBuild={(idea) => {
               setCampaignBrief({
                 title: idea.title,
-                goal: idea.purpose,
-                source: `${idea.hook}\n\n${idea.reason}`,
+                goal: idea.goal || idea.purpose,
+                source: [
+                  `Platform: ${idea.platform || inferIdeaPlatform(idea.format)}`,
+                  `Format: ${idea.format}`,
+                  `Goal: ${idea.goal || idea.purpose}`,
+                  `Hook: ${idea.hook}`,
+                  `Art Card Text:\n${idea.artCardText || `${idea.title}\n${idea.hook}\n${idea.cta || getIdeaCta(idea)}`}`,
+                  `Caption:\n${idea.caption || buildFallbackIdeaCaption(idea)}`,
+                  `CTA: ${idea.cta || getIdeaCta(idea)}`,
+                  `SEO Keywords: ${idea.seoKeywords || inferSeoKeywords(idea, brand.audience)}`,
+                  `Reason: ${idea.reason}`
+                ].join("\n\n"),
                 creativeDirection: idea.imagePrompt
               });
               setView("create");
@@ -392,14 +411,30 @@ function TodayView({
   );
 }
 
-function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { brandId: string; brandName: string; audience: string; initialIdeas: ContentIdea[]; onBuild: (idea: ContentIdea) => void }) {
+function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { brandId: string; brandName: string; audience: string; initialIdeas: ContentIdeaBrief[]; onBuild: (idea: ContentIdeaBrief) => void }) {
   const [ideaList, setIdeaList] = useState(initialIdeas);
-  const [selected, setSelected] = useState<ContentIdea | null>(initialIdeas[0] ?? null);
+  const [selected, setSelected] = useState<ContentIdeaBrief | null>(initialIdeas[0] ?? null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState("Reading Brand DNA");
+  const [pendingIdeaAction, setPendingIdeaAction] = useState<{ id: string; status: "SAVED" | "SKIPPED" | "BUILT" } | null>(null);
+  const [openingArtCardId, setOpeningArtCardId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const filters = useMemo(() => ["All", ...Array.from(new Set(ideaList.map((idea) => idea.purpose))).slice(0, 6)], [ideaList]);
   const filteredIdeas = activeFilter === "All" ? ideaList : ideaList.filter((idea) => idea.purpose === activeFilter);
+  const liveStatus = isGenerating ? `${generationStep}…` : pendingIdeaAction ? `${getIdeaActionLabel(pendingIdeaAction.status)}…` : openingArtCardId ? "Generating art card…" : "";
+
+  useEffect(() => {
+    if (!isGenerating) return;
+    const steps = ["Reading Brand DNA", "Choosing hook topics", "Writing post briefs", "Preparing image prompts"];
+    setGenerationStep(steps[0]);
+    let index = 0;
+    const timer = window.setInterval(() => {
+      index = (index + 1) % steps.length;
+      setGenerationStep(steps[index]);
+    }, 1400);
+    return () => window.clearInterval(timer);
+  }, [isGenerating]);
 
   async function generateIdeas() {
     setIsGenerating(true);
@@ -417,49 +452,63 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
     }
   }
 
-  async function updateStatus(idea: ContentIdea, status: "SAVED" | "SKIPPED" | "BUILT") {
-    const response = await fetch(`/api/ideas/${idea.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
-    });
-    if (!response.ok) return;
-    const { idea: updated } = await response.json();
-    setIdeaList((current) => current.map((item) => item.id === updated.id ? updated : item));
-    setSelected((current) => current?.id === updated.id ? updated : current);
-    if (status === "BUILT") onBuild(updated);
+  async function updateStatus(idea: ContentIdeaBrief, status: "SAVED" | "SKIPPED" | "BUILT") {
+    setPendingIdeaAction({ id: idea.id, status });
+    try {
+      const response = await fetch(`/api/ideas/${idea.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      if (!response.ok) return;
+      const { idea: updated } = await response.json();
+      setIdeaList((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setSelected((current) => current?.id === updated.id ? updated : current);
+      if (status === "BUILT") onBuild(updated);
+    } finally {
+      setPendingIdeaAction(null);
+    }
+  }
+
+  function openArtCard(idea: ContentIdeaBrief) {
+    setOpeningArtCardId(idea.id);
+    window.open(`/api/ideas/${idea.id}/artcard?platform=${encodeURIComponent(idea.platform || "INSTAGRAM")}`, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => setOpeningArtCardId((current) => current === idea.id ? null : current), 2600);
   }
 
   return (
     <div className="viewStack ideasView">
       <section className="viewIntro">
-        <h2>Ideas worth making</h2>
-        <p>Fresh directions based on {brandName}&apos;s offers, audience, brand voice, and current content mix.</p>
+        <h2>Content worth making</h2>
+        <p>Manual-style post briefs built from {brandName}&apos;s Brand DNA: platform, hook, art-card text, caption, CTA, SEO keywords, and image prompt.</p>
         <div className="ideasToolbar">
           <div className="filterRow" aria-label="Idea filters">
             {filters.map((filter) => <button className={activeFilter === filter ? "active" : ""} type="button" key={filter} onClick={() => setActiveFilter(filter)}>{filter}</button>)}
           </div>
-          <button className="primaryAction" disabled={isGenerating} type="button" onClick={generateIdeas}>{isGenerating ? "Building ideas" : ideaList.length ? "Refresh ideas" : "Generate ideas"}</button>
+          <LoadingButton className="primaryAction" disabled={isGenerating} loading={isGenerating} type="button" onClick={generateIdeas}>
+            {isGenerating ? `${generationStep}…` : ideaList.length ? "Refresh ideas" : "Generate ideas"}
+          </LoadingButton>
         </div>
+        <p className="srOnly" aria-live="polite">{liveStatus}</p>
         {error ? <p className="inlineError" role="alert">{error}</p> : null}
       </section>
 
       {ideaList.length === 0 ? (
-        <section className="ideaEmpty"><div className="ideaEmptyVisual"><span>{brandName.slice(0, 2).toUpperCase()}</span><small>Brand DNA → ideas → art cards</small></div><div><p className="contextLabel">Ready when you are</p><h3>Build the first idea set</h3><p>Orbit will use the saved voice, audience, offers, and visual direction to propose six distinct concepts.</p><button className="primaryAction" disabled={isGenerating} type="button" onClick={generateIdeas}>{isGenerating ? "Reading Brand DNA" : "Generate ideas"}</button></div></section>
+        <section className="ideaEmpty"><div className="ideaEmptyVisual"><span>{brandName.slice(0, 2).toUpperCase()}</span><small>Brand DNA → ideas → art cards</small></div><div><p className="contextLabel">Ready when you are</p><h3>Build the first idea set</h3><p>Orbit will use the saved voice, audience, offers, and visual direction to propose six distinct concepts.</p><LoadingButton className="primaryAction" disabled={isGenerating} loading={isGenerating} type="button" onClick={generateIdeas}>{isGenerating ? `${generationStep}…` : "Generate ideas"}</LoadingButton></div></section>
       ) : <div className="ideasLayout">
         <section className="ideaGrid" aria-label="Generated content ideas">
           {filteredIdeas.map((idea) => (
             <article className={selected?.id === idea.id ? "ideaCard selected" : "ideaCard"} key={idea.id}>
               <button className="ideaImageButton" type="button" aria-label={`Inspect ${idea.title}`} onClick={() => setSelected(idea)}>
-                <img className="ideaImage" src={`/api/ideas/${idea.id}/artcard`} alt={`${idea.title} art card for ${brandName}`} />
+                <IdeaConceptPreview brandName={brandName} idea={idea} />
               </button>
               <div className="ideaCardCopy">
-                <span>{idea.format}</span>
+                <span>{idea.platform || idea.format}</span>
                 <h3>{idea.title}</h3>
-                <p>{idea.purpose}</p>
+                <p>{idea.hook}</p>
                 <div>
-                  <button type="button" onClick={() => updateStatus(idea, "SAVED")}>{idea.status === "SAVED" ? "Saved" : "Save"}</button>
-                  <button type="button" onClick={() => updateStatus(idea, "SKIPPED")}>Skip</button>
+                  <LoadingButton loading={isIdeaActionPending(pendingIdeaAction, idea.id, "SAVED")} type="button" onClick={() => updateStatus(idea, "SAVED")}>{isIdeaActionPending(pendingIdeaAction, idea.id, "SAVED") ? "Saving…" : idea.status === "SAVED" ? "Saved" : "Save"}</LoadingButton>
+                  <LoadingButton loading={isIdeaActionPending(pendingIdeaAction, idea.id, "SKIPPED")} type="button" onClick={() => updateStatus(idea, "SKIPPED")}>{isIdeaActionPending(pendingIdeaAction, idea.id, "SKIPPED") ? "Skipping…" : "Skip"}</LoadingButton>
                   <button type="button" onClick={() => setSelected(idea)}>Inspect</button>
                 </div>
               </div>
@@ -468,22 +517,73 @@ function IdeasView({ brandId, brandName, audience, initialIdeas, onBuild }: { br
         </section>
 
         {selected ? <aside className="ideaInspector">
-          <img className="inspectorPreview" src={`/api/ideas/${selected.id}/artcard`} alt={`${selected.title} art card preview`} />
-          <p className="contextLabel">Selected idea</p>
+          <p className="contextLabel">Selected content brief</p>
           <h3>{selected.title}</h3>
           <p>{selected.reason}</p>
+          <div className="manualBrief">
+            <BriefBlock label="Platform" value={selected.platform || inferIdeaPlatform(selected.format)} />
+            <BriefBlock label="Format" value={selected.format} />
+            <BriefBlock label="Goal" value={selected.goal || selected.purpose} />
+            <BriefBlock label="Hook" value={selected.hook} />
+            <BriefBlock label="Art Card Text" value={selected.artCardText || `${selected.title}\n${selected.hook}\n${selected.cta || getIdeaCta(selected)}`} preserveLines />
+            <BriefBlock label="Caption" value={selected.caption || buildFallbackIdeaCaption(selected)} preserveLines />
+            <BriefBlock label="CTA" value={selected.cta || getIdeaCta(selected)} />
+            <BriefBlock label="SEO Keywords" value={selected.seoKeywords || inferSeoKeywords(selected, audience)} />
+            <BriefBlock label="Image Prompt" value={selected.imagePrompt} />
+          </div>
           <dl>
             <div><dt>Purpose</dt><dd>{selected.purpose}</dd></div>
             <div><dt>Best format</dt><dd>{selected.format}</dd></div>
             <div><dt>Audience</dt><dd>{audience}</dd></div>
           </dl>
-          <button className="primaryAction fullWidth" type="button" onClick={() => updateStatus(selected, "BUILT")}>Build this idea</button>
-          <button className="secondaryAction fullWidth" type="button" onClick={() => updateStatus(selected, "SAVED")}>{selected.status === "SAVED" ? "Saved for later" : "Save for later"}</button>
-          <a className="artCardDownload" href={`/api/ideas/${selected.id}/artcard`} target="_blank" rel="noreferrer">Open full-size art card</a>
+          <LoadingButton className="primaryAction fullWidth" loading={isIdeaActionPending(pendingIdeaAction, selected.id, "BUILT")} type="button" onClick={() => updateStatus(selected, "BUILT")}>{isIdeaActionPending(pendingIdeaAction, selected.id, "BUILT") ? "Opening builder…" : "Build this idea"}</LoadingButton>
+          <LoadingButton className="secondaryAction fullWidth" loading={isIdeaActionPending(pendingIdeaAction, selected.id, "SAVED")} type="button" onClick={() => updateStatus(selected, "SAVED")}>{isIdeaActionPending(pendingIdeaAction, selected.id, "SAVED") ? "Saving…" : selected.status === "SAVED" ? "Saved for later" : "Save for later"}</LoadingButton>
+          <LoadingButton className="artCardDownload" loading={openingArtCardId === selected.id} type="button" onClick={() => openArtCard(selected)}>{openingArtCardId === selected.id ? "Generating art card…" : "Open master art card"}</LoadingButton>
+          <div className="buttonRow">
+            <a className="buttonLink" href={`/api/ideas/${selected.id}/artcard?platform=INSTAGRAM`} target="_blank" rel="noreferrer">Feed 4:5</a>
+            <a className="buttonLink" href={`/api/ideas/${selected.id}/artcard?platform=STORY`} target="_blank" rel="noreferrer">Story 9:16</a>
+            <a className="buttonLink" href={`/api/ideas/${selected.id}/artcard?platform=SQUARE`} target="_blank" rel="noreferrer">Square</a>
+            <a className="buttonLink" href={`/api/ideas/${selected.id}/artcard?platform=GOOGLE_BUSINESS`} target="_blank" rel="noreferrer">Google 4:3</a>
+          </div>
         </aside> : null}
       </div>
       }
     </div>
+  );
+}
+
+function IdeaConceptPreview({ brandName, idea, variant = "grid" }: { brandName: string; idea: ContentIdeaBrief; variant?: "grid" | "large" }) {
+  return (
+    <div className={variant === "large" ? "ideaConceptPreview large" : "ideaConceptPreview"}>
+      <div className="ideaConceptTop">
+        <span>{brandName.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>
+        <small>{getIdeaLabel(idea)}</small>
+      </div>
+      <div className="ideaConceptTiles" aria-hidden="true"><i /><i /><i /></div>
+      <div className="ideaConceptPanel">
+        <strong>{idea.title}</strong>
+        <p>{idea.hook}</p>
+        <em>{getIdeaCta(idea)}</em>
+      </div>
+    </div>
+  );
+}
+
+function BriefBlock({ label, value, preserveLines = false }: { label: string; value: string; preserveLines?: boolean }) {
+  return (
+    <section>
+      <span>{label}</span>
+      <p className={preserveLines ? "preserveLines" : undefined}>{value}</p>
+    </section>
+  );
+}
+
+function LoadingButton({ loading = false, children, className, disabled, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean }) {
+  return (
+    <button {...props} className={[className, loading ? "isLoading" : ""].filter(Boolean).join(" ")} disabled={disabled || loading}>
+      {loading ? <span className="buttonSpinner" aria-hidden="true" /> : null}
+      <span>{children}</span>
+    </button>
   );
 }
 
@@ -566,7 +666,7 @@ function CalendarView({ drafts }: { drafts: ContentDraft[] }) {
               <h3>{formatDayHeading(day)}</h3>
               {dayDrafts.length ? dayDrafts.map((draft) => (
                 <article className="calendarPost" key={draft.id}>
-                  <img src={`/api/drafts/${draft.id}/artcard`} alt="" />
+                  <img src={`/api/drafts/${draft.id}/artcard`} alt="" loading="lazy" decoding="async" />
                   <div><span>{formatPlatform(draft.platform)}</span><strong>{draft.artHeadline || draft.caption.slice(0, 48)}</strong><small>{formatTime(draft.scheduledAt as Date)}</small></div>
                 </article>
               )) : <span className="emptyDay">No posts scheduled</span>}
@@ -800,6 +900,56 @@ function formatPlatform(value: string) {
 
 function formatStatus(value: string) {
   return value.replaceAll("_", " ").toLowerCase().replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
+function getIdeaCta(idea: Pick<ContentIdeaBrief, "title" | "hook" | "imagePrompt" | "cta">) {
+  if (idea.cta?.trim()) return idea.cta;
+  const text = `${idea.title} ${idea.hook} ${idea.imagePrompt}`.toLowerCase();
+  if (text.includes("ask") || text.includes("what can")) return "Ask Us";
+  if (text.includes("pickup")) return "Book Pickup";
+  if (text.includes("message") || text.includes("messenger")) return "Message Us";
+  if (text.includes("book")) return "Book Now";
+  return "Learn More";
+}
+
+function isIdeaActionPending(pending: { id: string; status: "SAVED" | "SKIPPED" | "BUILT" } | null, ideaId: string, status: "SAVED" | "SKIPPED" | "BUILT") {
+  return pending?.id === ideaId && pending.status === status;
+}
+
+function getIdeaActionLabel(status: "SAVED" | "SKIPPED" | "BUILT") {
+  if (status === "SAVED") return "Saving idea";
+  if (status === "SKIPPED") return "Skipping idea";
+  return "Opening builder";
+}
+
+function getIdeaLabel(idea: Pick<ContentIdeaBrief, "format" | "imagePrompt">) {
+  const text = `${idea.format} ${idea.imagePrompt}`.toLowerCase();
+  if (text.includes("faq")) return "FAQ";
+  if (text.includes("checklist")) return "Checklist";
+  if (text.includes("carousel")) return "Carousel";
+  if (text.includes("proof")) return "Proof";
+  if (text.includes("service")) return "Service";
+  return "Idea";
+}
+
+function inferIdeaPlatform(format: string) {
+  const text = format.toLowerCase();
+  if (text.includes("google")) return "Google Business Profile";
+  if (text.includes("instagram")) return "Instagram";
+  if (text.includes("facebook")) return "Facebook";
+  return "Facebook, Instagram, Google Business Profile";
+}
+
+function buildFallbackIdeaCaption(idea: ContentIdeaBrief) {
+  return `${idea.hook}\n\n${idea.reason}\n\n${idea.cta || getIdeaCta(idea)}.`;
+}
+
+function inferSeoKeywords(idea: ContentIdeaBrief, audience: string) {
+  const text = `${idea.title} ${idea.hook} ${idea.imagePrompt} ${audience}`.toLowerCase();
+  if (text.includes("laundry") || text.includes("dry clean") || text.includes("comforter") || text.includes("shoe")) {
+    return "laundry service Metro Manila, dry cleaning Metro Manila, shoe cleaning Metro Manila, comforter cleaning Metro Manila";
+  }
+  return "N/A";
 }
 
 function formatShortDate(value: Date) {

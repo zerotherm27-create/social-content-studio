@@ -48,6 +48,16 @@ export type MetaPagePost = {
   message?: string;
   created_time?: string;
   permalink_url?: string;
+  full_picture?: string;
+  attachments?: {
+    data?: Array<{
+      media?: { image?: { src?: string } };
+      target?: { url?: string };
+      type?: string;
+      title?: string;
+      description?: string;
+    }>;
+  };
   shares?: { count?: number };
   comments?: { summary?: { total_count?: number } };
   reactions?: { summary?: { total_count?: number } };
@@ -102,6 +112,16 @@ const postsSchema = z.object({
       message: z.string().optional(),
       created_time: z.string().optional(),
       permalink_url: z.string().optional(),
+      full_picture: z.string().optional(),
+      attachments: z.object({
+        data: z.array(z.object({
+          media: z.object({ image: z.object({ src: z.string().optional() }).optional() }).optional(),
+          target: z.object({ url: z.string().optional() }).optional(),
+          type: z.string().optional(),
+          title: z.string().optional(),
+          description: z.string().optional()
+        })).optional()
+      }).optional(),
       shares: z.object({ count: z.number().optional() }).optional(),
       comments: z.object({ summary: z.object({ total_count: z.number().optional() }).optional() }).optional(),
       reactions: z.object({ summary: z.object({ total_count: z.number().optional() }).optional() }).optional()
@@ -310,7 +330,7 @@ export async function fetchMetaPagePosts(input: {
   // Brand learning needs only content authored by the managed Page. Expanding
   // comments, reactions, or shares can make Meta classify the request as
   // user-content access and require pages_read_user_content/App Review.
-  url.searchParams.set("fields", "id,message,created_time,permalink_url");
+  url.searchParams.set("fields", "id,message,created_time,permalink_url,full_picture,attachments{media,target,type,title,description}");
   url.searchParams.set("limit", String(input.limit ?? 20));
   url.searchParams.set("access_token", input.pageAccessToken);
 
@@ -438,6 +458,7 @@ export function summarizeMetaPosts(posts: MetaPagePost[]) {
         `Post ${index + 1}`,
         post.created_time ? `Created: ${post.created_time}` : "",
         hasEngagement ? `Engagement: ${reactions} reactions, ${comments} comments, ${shares} shares` : "",
+        summarizePostVisuals(post),
         post.message
       ]
         .filter(Boolean)
@@ -445,4 +466,25 @@ export function summarizeMetaPosts(posts: MetaPagePost[]) {
     })
     .join("\n\n")
     .slice(0, 12000);
+}
+
+function summarizePostVisuals(post: MetaPagePost) {
+  const attachmentNotes = (post.attachments?.data ?? [])
+    .map((attachment) => {
+      const imageUrl = attachment.media?.image?.src ?? attachment.target?.url;
+      return [
+        attachment.type ? `type=${attachment.type}` : "",
+        attachment.title ? `title=${attachment.title}` : "",
+        attachment.description ? `description=${attachment.description}` : "",
+        imageUrl ? `image=${imageUrl}` : ""
+      ].filter(Boolean).join(", ");
+    })
+    .filter(Boolean);
+
+  const parts = [
+    post.full_picture ? `full_picture=${post.full_picture}` : "",
+    ...attachmentNotes
+  ].filter(Boolean);
+
+  return parts.length ? `Visual evidence: ${parts.join(" | ")}` : "";
 }
